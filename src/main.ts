@@ -20,6 +20,8 @@ async function bootstrap() {
     new ValidationPipe({
       // it transforms incoming data types
       transform: true,
+      whitelist: true,
+      forbidNonWhitelisted: true
     })
   )
   // Type-safe variable
