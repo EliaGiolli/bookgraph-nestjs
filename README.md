@@ -1,114 +1,137 @@
+# BookGraph
+
+> **A private archive for the way you discover knowledge.**
+
 <p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
+  <img src="https://img.shields.io/badge/status-in%20development-e6a23c?style=for-the-badge" alt="Status: in development" />
+  <img src="https://img.shields.io/badge/backend-NestJS-E0234E?style=for-the-badge&logo=nestjs&logoColor=white" alt="NestJS" />
+  <img src="https://img.shields.io/badge/language-TypeScript-3178C6?style=for-the-badge&logo=typescript&logoColor=white" alt="TypeScript" />
+  <img src="https://img.shields.io/badge/runtime-Node.js-339933?style=for-the-badge&logo=node.js&logoColor=white" alt="Node.js" />
 </p>
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+BookGraph is a full-stack web application for managing the books you have read and the books you want to read. Its defining feature is a visual graph that captures **how each book entered your intellectual journey**: through a bibliography, a recommendation from someone you know, an internet search, or another book already in your archive.
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+BookGraph is not just a book catalog. It is a way to preserve the path behind your ideas.
 
-## Description
+## ✨ Why BookGraph?
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+The discovery of a book is often fragmented across a physical book, an AI assistant, an online bookstore, bookmarks, and personal notes. BookGraph brings that moment of discovery and its context into one private archive.
 
-## Project setup
+| Typical reading trackers | BookGraph |
+| --- | --- |
+| Focus on what you decided to read | Focuses on **where the decision came from** |
+| Store books as isolated entries | Connects books through their discovery paths |
+| Encourage community and social activity | Protects a personal, private knowledge archive |
 
-```bash
-$ bun install
-```
+## 🧭 Core concepts
 
-## Compile and run the project
+- **Reading catalog** - Keep track of books you have read and books on your wishlist.
+- **Discovery trails** - Record the source that led you to each book: bibliography, word of mouth, web research, and more.
+- **Knowledge graph** - Explore the relationships between books through a visual network inspired by tools such as Obsidian.
+- **Personal by design** - No community feed, no social pressure, no purchasing flow. Just your intellectual archive.
+- **AI-assisted discovery** - Future integrations will use AI suggestions to help expand your graph without losing the context behind each recommendation.
 
-```bash
-# development
-$ bun run start
+## 🚀 Project status
 
-# watch mode
-$ bun run start:dev
+BookGraph is currently in active development. The NestJS API foundation is available today, with the graph experience, user accounts, persistent storage, and AI discovery planned as the project evolves.
 
-# production mode
-$ bun run start:prod
-```
+### Available API endpoints
 
-## Run tests
+The current API exposes:
 
-```bash
-# unit tests
-$ bun run test
+| Method | Endpoint | Description |
+| --- | --- | --- |
+| `GET` | `/book` | Return the available books |
+| `GET` | `/book/:id` | Return a book by numeric ID |
+| `POST` | `/book` | Add a book to the current in-memory collection |
 
-# e2e tests
-$ bun run test:e2e
+Interactive API documentation is available at `http://localhost:3000/api` while the server is running.
 
-# test coverage
-$ bun run test:cov
-```
+## 🛠️ Technology stack
 
-## Deployment
+- **Backend:** NestJS, TypeScript, Node.js
+- **Validation:** `class-validator`, `class-transformer`
+- **API documentation:** Swagger / OpenAPI
+- **Planned persistence:** PostgreSQL with TypeORM
+- **Planned authentication:** JWT
+- **Planned local infrastructure:** Docker
+- **Testing:** Vitest and Supertest
 
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
+## 📦 Getting started
 
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
+### Prerequisites
+
+- Node.js 20 or newer
+- npm, Bun, or another compatible package manager
+
+### Installation
 
 ```bash
-$ bun install -g @nestjs/mau
-$ mau deploy
+git clone https://github.com/EliaGiolli/bookgraph-nestjs.git
+cd bookgraph-nest
+npm install
 ```
 
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
+### Run the API
 
-## Observability
+```bash
+# Development
+npm run start:dev
 
-In production applications, observability is essential for understanding how your system behaves, detecting issues early, and maintaining reliable performance.
+# Production build
+npm run build
+npm run start:prod
+```
 
-[NestJS Observe](https://observe.nestjs.com) automatically instruments your NestJS application, giving you deep visibility into your system with minimal setup:
+The API starts on `http://localhost:3000` by default.
 
-- **Distributed tracing:** Follow requests across services and understand how they flow through your system.
-- **Waterfall analysis:** Visualize request execution and identify slow operations, bottlenecks, and unexpected delays.
-- **Performance analysis:** Analyze application performance in real time and quickly pinpoint areas that need optimization.
-- **Metrics:** Track key application and infrastructure metrics to understand system health and performance trends.
-- **Logging:** Centralize and correlate logs with traces and other telemetry to make debugging easier.
-- **Error tracking:** Detect errors quickly and investigate their root causes with the surrounding context.
-- **SLA monitoring:** Track service-level objectives and identify when your application is approaching or exceeding defined thresholds.
-- **Alarms and alerts:** Set up alerts for critical errors, performance degradation, SLA violations, and other anomalies so your team can react quickly.
+## 🧪 Testing and quality
 
-## Resources
+```bash
+# Unit tests
+npm test
 
-Check out a few resources that may come in handy when working with NestJS:
+# End-to-end tests
+npm run test:e2e
 
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Auto-instrument your application with [NestJS Observer](https://observer.nestjs.com). Distributed tracing, metrics, and logging made easy. Error tracking and performance monitoring for your NestJS applications.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
+# Test coverage
+npm run test:cov
 
-## Support
+# Lint
+npm run lint
+```
 
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
+## 🗺️ Roadmap
 
-## Stay in touch
+- [x] Initial NestJS API structure
+- [x] Basic book listing, lookup, and creation endpoints
+- [x] Swagger / OpenAPI endpoint
+- [ ] PostgreSQL persistence with TypeORM
+- [ ] User authentication and private libraries with JWT
+- [ ] Read / wishlist status and discovery metadata
+- [ ] Book-to-book discovery connections
+- [ ] Interactive graph visualization
+- [ ] AI-powered book discovery suggestions
 
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
+## 📁 Project structure
 
-## License
+```text
+src/
+├── books/            # Book module, controller, service, and DTOs
+├── auth/             # Authentication module (in progress)
+├── admin/            # Administrative features (in progress)
+├── book-connections/ # Book relationship graph (in progress)
+├── common/           # Shared application concerns
+├── config/           # Application configuration
+└── content/          # Current book data source
+```
 
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+## 🔐 Product philosophy
+
+> **"A place you go when you want to archive your knowledge."**
+
+BookGraph is intentionally personal and private. It does not try to turn reading into a social competition or a shopping journey. It exists to make the evolution of your thinking visible: what you read, what you want to read, and the connections that brought you there.
+
+## 📄 License
+
+This project is currently private and under active development. Licensing details will be added when the project is ready for public release.
