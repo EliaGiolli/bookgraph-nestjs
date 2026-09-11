@@ -117,14 +117,48 @@ npm run lint
 
 ```text
 src/
-├── books/            # Book module, controller, service, and DTOs
-├── auth/             # Authentication module (in progress)
-├── admin/            # Administrative features (in progress)
-├── book-connections/ # Book relationship graph (in progress)
-├── common/           # Shared application concerns
-├── config/           # Application configuration
-└── content/          # Current book data source
+├── app.module.ts             # Root application module
+├── main.ts                   # Application bootstrap and global setup
+├── books/                    # Book module, controllers, services, and DTOs
+├── auth/                     # Authentication and JWT authorization features
+├── users/                    # User accounts and private library ownership
+├── admin/                    # Administrative tools and protected operations
+├── book-connections/         # Relationships between books and discovery sources
+├── common/                   # Shared guards, filters, decorators, and utilities
+├── config/                   # Centralized application and integration configuration
+│   ├── index.ts              # Public configuration entry point and re-exports
+│   ├── env.config.ts         # Parses and exposes validated environment variables
+│   └── swagger.config.ts     # Defines the Swagger / OpenAPI document metadata
+├── lib/
+│   └── schemas/              # Reusable runtime validation schemas
+└── content/                  # Temporary in-memory book data during development
 ```
+
+The folders currently marked as placeholders are reserved for their respective
+application domains. As features are implemented, their `.gitkeep` files will
+be replaced by modules, controllers, services, entities, DTOs, and tests.
+
+### Why `config/` exists
+
+The `config/` directory keeps application configuration separate from business
+logic and startup orchestration. It gives the rest of the codebase one stable
+place from which to import validated settings and integration options, instead
+of reading `process.env` or constructing configuration objects in multiple
+modules.
+
+- `env.config.ts` reads the process environment and validates it through the
+  Zod schema in `lib/schemas/env.schema.ts`. Invalid values fail fast during
+  startup, while `PORT` is converted into a number and defaults to `3000`.
+- `swagger.config.ts` contains the metadata used to generate the Swagger /
+  OpenAPI document, such as the API title, description, version, and tags.
+- `index.ts` is the configuration entry point. It re-exports the environment
+  configuration and Swagger configuration so consumers can use concise imports
+  such as `./config/index.js`.
+
+`main.ts` remains responsible for using these values: it creates the NestJS
+application, registers global pipes, builds the Swagger document, mounts the
+documentation route, and starts the HTTP server. In this way, `config/`
+describes configuration while `main.ts` performs application setup.
 
 ## 🔐 Product philosophy
 
