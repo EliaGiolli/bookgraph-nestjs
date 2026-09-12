@@ -3,7 +3,6 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 
 // Modules
 import { AppController } from './app.controller.js';
-import { AppService } from './app.service.js';
 import { BooksModule } from './books/books.module.js';
 
 //Entities
@@ -38,8 +37,8 @@ import { AuthorModule } from './author/author.module.js';
         password: String(configService.get<string>('DB_PASSWORD')),
         database: configService.get<string>('DB_NAME', 'bookgraph'),
         entities: [User, Author, Tag, BookTag, BookConnection, Book],
-        synchronize: true, // change to 'false' in production
-        logging: true
+        synchronize: false, // change to 'false' in production
+        logging: true // prints SQL queries in the console
       })
 
     }),
@@ -48,6 +47,6 @@ import { AuthorModule } from './author/author.module.js';
     AuthorModule,
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [],
 })
 export class AppModule {}
