@@ -65,12 +65,10 @@ Create a `.env` file in the project root. The application uses these database va
 PORT=3000
 DB_HOST=localhost
 DB_PORT=5432
-DB_USERNAME=bookgraph
-DB_PASSWORD=bookgraph
+DB_USERNAME=<your-postgres-user>
+DB_PASSWORD=<your-postgres-password>
 DB_NAME=bookgraph
 ```
-
-`PORT` is validated as an integer from `1` to `65535` and defaults to `3000`. The runtime database configuration defaults to `localhost:5432`, database `bookgraph`, and user `bookgraph`; set `DB_PASSWORD` explicitly. TypeORM migrations are configured with `synchronize: false`.
 
 ### Create the schema
 
