@@ -8,6 +8,9 @@ import { BooksModule } from './books/books.module.js';
 
 // TypeORM
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { UsersModule } from './users/users.module.js';
+import { TagsModule } from './tags/tags.module.js';
+import { AuthorModule } from './author/author.module.js';
 
 @Module({
   imports: [
@@ -31,6 +34,9 @@ import { TypeOrmModule } from '@nestjs/typeorm';
       })
 
     }),
+    UsersModule,
+    TagsModule,
+    AuthorModule,
   ],
   controllers: [AppController],
   providers: [AppService],
