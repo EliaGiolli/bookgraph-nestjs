@@ -1,171 +1,167 @@
 # BookGraph
 
-> **A private archive for the way you discover knowledge.**
+BookGraph is a NestJS API for a personal book archive. Its data model is being built around reading status, book ownership, authors, tags, and connections that describe how one book led to another.
 
-<p align="center">
-  <img src="https://img.shields.io/badge/status-in%20development-e6a23c?style=for-the-badge" alt="Status: in development" />
-  <img src="https://img.shields.io/badge/backend-NestJS-E0234E?style=for-the-badge&logo=nestjs&logoColor=white" alt="NestJS" />
-  <img src="https://img.shields.io/badge/language-TypeScript-3178C6?style=for-the-badge&logo=typescript&logoColor=white" alt="TypeScript" />
-  <img src="https://img.shields.io/badge/runtime-Node.js-339933?style=for-the-badge&logo=node.js&logoColor=white" alt="Node.js" />
-</p>
+The project is in active development. PostgreSQL persistence, TypeORM entities, an initial migration, seed data, Swagger documentation, and scaffolded resource modules are present. Authentication, authorization, and a graph-facing API are not implemented yet.
 
-BookGraph is a full-stack web application for managing the books you have read and the books you want to read. Its defining feature is a visual graph that captures **how each book entered your intellectual journey**: through a bibliography, a recommendation from someone you know, an internet search, or another book already in your archive.
+## Current implementation
 
-BookGraph is not just a book catalog. It is a way to preserve the path behind your ideas.
+### Domain model
 
-## ✨ Why BookGraph?
+The initial PostgreSQL schema contains:
 
-The discovery of a book is often fragmented across a physical book, an AI assistant, an online bookstore, bookmarks, and personal notes. BookGraph brings that moment of discovery and its context into one private archive.
+- **Users** with UUID identifiers, unique usernames, roles (`ADMIN` or `USER`), and password hashes hidden from standard entity queries.
+- **Books** with title, optional description, publication date, genre, cover URL, ISBN, and status (`read`, `reading`, or `wishlist`). Each book belongs to a user and an author.
+- **Authors** with a name and optional biography.
+- **Tags** owned by a user and linked to books through the `book_tags` join table.
+- **Book connections** linking a source book to a discovered book, with an optional discovery method and suggester.
 
-| Typical reading trackers | BookGraph |
+The schema uses UUID primary keys and foreign-key delete rules. Books cascade to their tags and connections when deleted; authors cannot be deleted while books still reference them.
+
+### HTTP API
+
+Swagger UI is mounted at `http://localhost:3000/api` by default.
+
+The currently registered resource routes are scaffolded CRUD routes:
+
+| Resource | Routes |
 | --- | --- |
-| Focus on what you decided to read | Focuses on **where the decision came from** |
-| Store books as isolated entries | Connects books through their discovery paths |
-| Encourage community and social activity | Protects a personal, private knowledge archive |
+| Users | `POST /users`, `GET /users`, `GET /users/:id`, `PATCH /users/:id`, `DELETE /users/:id` |
+| Tags | `POST /tags`, `GET /tags`, `GET /tags/:id`, `PATCH /tags/:id`, `DELETE /tags/:id` |
+| Authors | `POST /author`, `GET /author`, `GET /author/:id`, `PATCH /author/:id`, `DELETE /author/:id` |
 
-## 🧭 Core concepts
+These services currently return placeholder responses rather than reading from or writing to the database. The book service has repository-backed `findAll`, `findOne`, and `remove` methods, but the `BookController` does not expose `/book` routes yet. There is no implemented authentication or authorization layer, despite the placeholder `auth/` and `admin/` directories.
 
-- **Reading catalog** - Keep track of books you have read and books on your wishlist.
-- **Discovery trails** - Record the source that led you to each book: bibliography, word of mouth, web research, and more.
-- **Knowledge graph** - Explore the relationships between books through a visual network inspired by tools such as Obsidian.
-- **Personal by design** - No community feed, no social pressure, no purchasing flow. Just your intellectual archive.
-- **AI-assisted discovery** - Future integrations will use AI suggestions to help expand your graph without losing the context behind each recommendation.
+Incoming requests pass through a global `ValidationPipe` with transformation, whitelisting, and rejection of non-whitelisted properties. The current DTO classes are empty, so meaningful request payloads are not accepted by the scaffolded endpoints yet.
 
-## 🚀 Project status
+## Technology
 
-BookGraph is currently in active development. The NestJS API foundation is available today, with the graph experience, user accounts, persistent storage, and AI discovery planned as the project evolves.
+- NestJS 12, TypeScript, and Node.js
+- PostgreSQL with TypeORM
+- Zod for `PORT` validation
+- `class-validator` and `class-transformer` for Nest validation support
+- Swagger / OpenAPI
+- Vitest, Supertest, and `@vitest/coverage-v8`
+- Oxlint and Prettier
 
-### Available API endpoints
-
-The current API exposes:
-
-| Method | Endpoint | Description |
-| --- | --- | --- |
-| `GET` | `/book` | Return the available books |
-| `GET` | `/book/:id` | Return a book by numeric ID |
-| `POST` | `/book` | Add a book to the current in-memory collection |
-
-Interactive API documentation is available at `http://localhost:3000/api` while the server is running.
-
-## 🛠️ Technology stack
-
-- **Backend:** NestJS, TypeScript, Node.js
-- **Validation:** `class-validator`, `class-transformer`
-- **API documentation:** Swagger / OpenAPI
-- **Planned persistence:** PostgreSQL with TypeORM
-- **Planned authentication:** JWT
-- **Planned local infrastructure:** Docker
-- **Testing:** Vitest and Supertest
-
-## 📦 Getting started
+## Getting started
 
 ### Prerequisites
 
 - Node.js 20 or newer
-- npm, Bun, or another compatible package manager
+- npm
+- A running PostgreSQL instance
+- The PostgreSQL `uuid-ossp` extension, required by the initial migration's `uuid_generate_v4()` defaults
 
-### Installation
+### Install
 
 ```bash
-git clone https://github.com/EliaGiolli/bookgraph-nestjs.git
-cd bookgraph-nest
 npm install
 ```
+
+Create a `.env` file in the project root. The application uses these database variables:
+
+```dotenv
+PORT=3000
+DB_HOST=localhost
+DB_PORT=5432
+DB_USERNAME=bookgraph
+DB_PASSWORD=bookgraph
+DB_NAME=bookgraph
+```
+
+`PORT` is validated as an integer from `1` to `65535` and defaults to `3000`. The runtime database configuration defaults to `localhost:5432`, database `bookgraph`, and user `bookgraph`; set `DB_PASSWORD` explicitly. TypeORM migrations are configured with `synchronize: false`.
+
+### Create the schema
+
+Build before running TypeORM commands because the CLI loads compiled files from `dist/`:
+
+```bash
+npm run migration:run
+```
+
+To reset the development database with the sample dataset, run:
+
+```bash
+npm run seed
+```
+
+The seed command is destructive: it truncates the domain tables with `CASCADE`, then creates one admin user, five authors, five tags, ten books, six book-tag associations, and ten book connections.
 
 ### Run the API
 
 ```bash
-# Development
+# Development with file watching
 npm run start:dev
 
-# Production build
+# Production build and start
 npm run build
 npm run start:prod
 ```
 
-The API starts on `http://localhost:3000` by default.
+The API listens on `http://localhost:3000` unless `PORT` is changed.
 
-## 🧪 Testing and quality
+## Scripts
 
 ```bash
-# Unit tests
-npm test
-
-# End-to-end tests
-npm run test:e2e
-
-# Test coverage
-npm run test:cov
-
-# Lint
-npm run lint
+npm run build             # Compile the application
+npm run start             # Start the compiled Nest application through Nest CLI
+npm run start:dev         # Start in watch mode
+npm run start:debug       # Start in debug/watch mode
+npm run start:prod        # Run dist/main.js
+npm run format            # Format source and test files
+npm run lint              # Run Oxlint
+npm test                  # Run unit tests
+npm run test:watch        # Run Vitest in watch mode
+npm run test:cov          # Run tests with coverage
+npm run test:e2e          # Run the e2e Vitest configuration
+npm run migration:run     # Apply compiled TypeORM migrations
+npm run migration:revert  # Revert the latest migration
+npm run migration:generate # Generate a migration after building
+npm run seed              # Rebuild and replace database data with seed data
 ```
 
-## 🗺️ Roadmap
-
-- [x] Initial NestJS API structure
-- [x] Basic book listing, lookup, and creation endpoints
-- [x] Swagger / OpenAPI endpoint
-- [ ] PostgreSQL persistence with TypeORM
-- [ ] User authentication and private libraries with JWT
-- [ ] Read / wishlist status and discovery metadata
-- [ ] Book-to-book discovery connections
-- [ ] Interactive graph visualization
-- [ ] AI-powered book discovery suggestions
-
-## 📁 Project structure
+## Project structure
 
 ```text
 src/
-├── app.module.ts             # Root application module
-├── main.ts                   # Application bootstrap and global setup
-├── books/                    # Book module, controllers, services, and DTOs
-├── auth/                     # Authentication and JWT authorization features
-├── users/                    # User accounts and private library ownership
-├── admin/                    # Administrative tools and protected operations
-├── book-connections/         # Relationships between books and discovery sources
-├── common/                   # Shared guards, filters, decorators, and utilities
-├── config/                   # Centralized application and integration configuration
-│   ├── index.ts              # Public configuration entry point and re-exports
-│   ├── env.config.ts         # Parses and exposes validated environment variables
-│   └── swagger.config.ts     # Defines the Swagger / OpenAPI document metadata
-├── lib/
-│   └── schemas/              # Reusable runtime validation schemas
-└── content/                  # Temporary in-memory book data during development
+├── main.ts                    # Bootstrap, global validation, and Swagger
+├── app.module.ts              # Root module and PostgreSQL/TypeORM setup
+├── books/                     # Book module, service, entities, and join models
+├── users/                     # User module, entity, DTOs, and scaffolded routes
+├── author/                    # Author module, entity, DTOs, and scaffolded routes
+├── tags/                      # Tag module, entity, DTOs, and scaffolded routes
+├── common/types/enums/        # User and book status enums
+├── config/                    # TypeORM data source and Swagger/environment config
+├── lib/database/seeds/        # Development database seed script
+├── lib/schemas/               # Runtime environment schema
+└── migrations/                # TypeORM migrations
+test/                          # End-to-end tests
 ```
 
-The folders currently marked as placeholders are reserved for their respective
-application domains. As features are implemented, their `.gitkeep` files will
-be replaced by modules, controllers, services, entities, DTOs, and tests.
+The `auth/`, `admin/`, and `content/` directories are currently placeholders or unused development areas. There is no frontend application in this repository.
 
-### Why `config/` exists
+## Development status
 
-The `config/` directory keeps application configuration separate from business
-logic and startup orchestration. It gives the rest of the codebase one stable
-place from which to import validated settings and integration options, instead
-of reading `process.env` or constructing configuration objects in multiple
-modules.
+Implemented foundation:
 
-- `env.config.ts` reads the process environment and validates it through the
-  Zod schema in `lib/schemas/env.schema.ts`. Invalid values fail fast during
-  startup, while `PORT` is converted into a number and defaults to `3000`.
-- `swagger.config.ts` contains the metadata used to generate the Swagger /
-  OpenAPI document, such as the API title, description, version, and tags.
-- `index.ts` is the configuration entry point. It re-exports the environment
-  configuration and Swagger configuration so consumers can use concise imports
-  such as `./config/index.js`.
+- NestJS application bootstrap and modular structure
+- PostgreSQL and TypeORM configuration
+- Initial relational schema and migration
+- Book, user, author, tag, and graph-connection entities
+- Development seed data
+- Swagger route
+- Global request validation configuration
+- Vitest unit/e2e test setup
 
-`main.ts` remains responsible for using these values: it creates the NestJS
-application, registers global pipes, builds the Swagger document, mounts the
-documentation route, and starts the HTTP server. In this way, `config/`
-describes configuration while `main.ts` performs application setup.
+Next implementation work includes:
 
-## 🔐 Product philosophy
+- Complete DTOs and database-backed CRUD services
+- Expose book and graph-connection endpoints
+- Implement authentication and authorization
+- Add meaningful integration and e2e coverage
+- Build the graph-oriented client experience
 
-> **"A place you go when you want to archive your knowledge."**
+## License
 
-BookGraph is intentionally personal and private. It does not try to turn reading into a social competition or a shopping journey. It exists to make the evolution of your thinking visible: what you read, what you want to read, and the connections that brought you there.
-
-## 📄 License
-
-This project is currently private and under active development. Licensing details will be added when the project is ready for public release.
+This project is private and under active development. Licensing details will be added before a public release.
