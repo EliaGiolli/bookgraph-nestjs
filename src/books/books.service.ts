@@ -1,23 +1,25 @@
 import { Injectable } from '@nestjs/common';
-import { books } from '../content/books.js';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { Book } from './entities/books.entity.js';
 
 @Injectable()
 export class BooksService {
-  getBooks() {
-    return books;
-  }
+    constructor(
+        @InjectRepository(Book)
+        private bookRepository: Repository<Book>
+    ){}
 
-  getOne(bookId: number) {
-    return books.find((book) => book.id === bookId);
-  }
+    findAll(): Promise<Book[]> {
+        return this.bookRepository.find();
+    }
 
-  createBook(book: {
-    id: number;
-    title: string;
-    author: string;
-    year: number;
-    genre: string;
-  }) {
-    return [...books, book];
-  }
+    findOne(id:string):Promise<Book | null>{
+        // the findOneOrFail() method prevents IDOR
+        return this.bookRepository.findOneByOrFail({ id });
+    }
+
+    async remove(id:string):Promise<void> {
+        await this.bookRepository.delete(id);
+    }
 }
