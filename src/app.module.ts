@@ -6,6 +6,14 @@ import { AppController } from './app.controller.js';
 import { AppService } from './app.service.js';
 import { BooksModule } from './books/books.module.js';
 
+//Entities
+import { User } from './users/entities/user.entity.js';
+import { Book } from './books/entities/books.entity.js';
+import { Author } from './author/entities/author.entity.js';
+import { BookTag } from './books/entities/book-tag.entity.js';
+import { Tag } from './tags/entities/tag.entity.js';
+import { BookConnection } from './books/entities/book-connection.entity.js';
+
 // TypeORM
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { UsersModule } from './users/users.module.js';
@@ -29,8 +37,9 @@ import { AuthorModule } from './author/author.module.js';
         username: configService.get<string>('DB_USERNAME', 'bookgraph'),
         password: String(configService.get<string>('DB_PASSWORD')),
         database: configService.get<string>('DB_NAME', 'bookgraph'),
-        entities: [],
-        synchronize: true // change to 'false' in production
+        entities: [User, Author, Tag, BookTag, BookConnection, Book],
+        synchronize: true, // change to 'false' in production
+        logging: true
       })
 
     }),

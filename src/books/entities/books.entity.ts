@@ -1,43 +1,34 @@
-import {
-  Entity,
-  PrimaryGeneratedColumn,
-  Column,
-  CreateDateColumn,
-  UpdateDateColumn,
-  ManyToOne,
-  OneToMany,
-  JoinColumn,
-} from 'typeorm';
+import * as typeorm from 'typeorm';
 import { User } from '../../users/entities/user.entity.js';
 import { Author } from '../../author/entities/author.entity.js';
 import { BookRole } from '../../common/types/enums/book-role.enum.js';
 import { BookTag } from './book-tag.entity.js';
 import { BookConnection } from './book-connection.entity.js';
 
-@Entity('books')
+@typeorm.Entity('books')
 export class Book {
-  @PrimaryGeneratedColumn('uuid')
+  @typeorm.PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column({ type: 'varchar', length: 255 })
+  @typeorm.Column({ type: 'varchar', length: 255 })
   title: string;
 
-  @Column({ type: 'text', nullable: true })
+  @typeorm.Column({ type: 'text', nullable: true })
   description?: string;
 
-  @Column({ type: 'date', nullable: true })
+  @typeorm.Column({ type: 'date', nullable: true })
   publishedDate?: Date;
 
-  @Column({ type: 'varchar', length: 100, nullable: true })
+  @typeorm.Column({ type: 'varchar', length: 100, nullable: true })
   genre?: string;
 
-  @Column({ type: 'varchar', nullable: true })
+  @typeorm.Column({ type: 'varchar', nullable: true })
   coverImg?: string;
 
-  @Column({ type: 'varchar', length: 20, nullable: true })
+  @typeorm.Column({ type: 'varchar', length: 20, nullable: true })
   isbn?: string;
 
-  @Column({
+  @typeorm.Column({
     type: 'enum',
     enum: BookRole,
     default: BookRole.WISHLIST,
@@ -45,33 +36,33 @@ export class Book {
   status: BookRole;
 
   // Relazioni
-  @Column({ type: 'uuid' })
+  @typeorm.Column({ type: 'uuid' })
   userId: string;
 
-  @ManyToOne(() => User, (user) => user.books, { onDelete: 'CASCADE' })
-  @JoinColumn({ name: 'userId' })
-  user: User;
+  @typeorm.ManyToOne(() => User, (user) => user.books, { onDelete: 'CASCADE' })
+  @typeorm.JoinColumn({ name: 'userId' })
+  user: typeorm.Relation<User>;
 
-  @Column({ type: 'uuid' })
+  @typeorm.Column({ type: 'uuid' })
   authorId: string;
 
-  @ManyToOne(() => Author, (author) => author.books, { onDelete: 'RESTRICT' })
-  @JoinColumn({ name: 'authorId' })
-  author: Author;
+  @typeorm.ManyToOne(() => Author, (author) => author.books, { onDelete: 'RESTRICT' })
+  @typeorm.JoinColumn({ name: 'authorId' })
+  author: typeorm.Relation<Author>;
 
-  @OneToMany(() => BookTag, (bookTag) => bookTag.book)
-  bookTags: BookTag[];
+  @typeorm.OneToMany(() => BookTag, (bookTag) => bookTag.book)
+  bookTags: typeorm.Relation<BookTag[]>;
 
   // Connessioni del Grafo (Self-Referential)
-  @OneToMany(() => BookConnection, (conn) => conn.sourceBook)
-  sourceConnections: BookConnection[];
+  @typeorm.OneToMany(() => BookConnection, (conn) => conn.sourceBook)
+  sourceConnections: typeorm.Relation<BookConnection[]>;
 
-  @OneToMany(() => BookConnection, (conn) => conn.discoveredBook)
-  discoveredConnections: BookConnection[];
+  @typeorm.OneToMany(() => BookConnection, (conn) => conn.discoveredBook)
+  discoveredConnections: typeorm.Relation<BookConnection[]>;
 
-  @CreateDateColumn()
+  @typeorm.CreateDateColumn()
   createdAt: Date;
 
-  @UpdateDateColumn()
+  @typeorm.UpdateDateColumn()
   updatedAt: Date;
 }

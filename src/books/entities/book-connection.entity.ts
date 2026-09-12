@@ -1,38 +1,31 @@
-import {
-  Entity,
-  PrimaryGeneratedColumn,
-  Column,
-  CreateDateColumn,
-  ManyToOne,
-  JoinColumn,
-} from 'typeorm';
+import * as typeorm from 'typeorm';
 import { Book } from './books.entity.js';
 
-@Entity('book_connections')
+@typeorm.Entity('book_connections')
 export class BookConnection {
-  @PrimaryGeneratedColumn('uuid')
+  @typeorm.PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column({ type: 'uuid' })
+  @typeorm.Column({ type: 'uuid' })
   sourceBookId: string;
 
-  @ManyToOne(() => Book, (book) => book.sourceConnections, { onDelete: 'CASCADE' })
-  @JoinColumn({ name: 'sourceBookId' })
-  sourceBook: Book;
+  @typeorm.ManyToOne(() => Book, (book) => book.sourceConnections, { onDelete: 'CASCADE' })
+  @typeorm.JoinColumn({ name: 'sourceBookId' })
+  sourceBook: typeorm.Relation<Book>;
 
-  @Column({ type: 'uuid' })
+  @typeorm.Column({ type: 'uuid' })
   discoveredBookId: string;
 
-  @ManyToOne(() => Book, (book) => book.discoveredConnections, { onDelete: 'CASCADE' })
-  @JoinColumn({ name: 'discoveredBookId' })
-  discoveredBook: Book;
+  @typeorm.ManyToOne(() => Book, (book) => book.discoveredConnections, { onDelete: 'CASCADE' })
+  @typeorm.JoinColumn({ name: 'discoveredBookId' })
+  discoveredBook: typeorm.Relation<Book>;
 
-  @Column({ type: 'varchar', length: 100, nullable: true })
+  @typeorm.Column({ type: 'varchar', length: 100, nullable: true })
   discoveryMethod?: string; // Es. "Cited in Chapter 3", "Recommended by Author"
 
-  @Column({ type: 'varchar', length: 100, nullable: true })
+  @typeorm.Column({ type: 'varchar', length: 100, nullable: true })
   suggestedBy?: string;
 
-  @CreateDateColumn()
+  @typeorm.CreateDateColumn()
   createdAt: Date;
 }

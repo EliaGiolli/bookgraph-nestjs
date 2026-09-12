@@ -1,23 +1,23 @@
-import { Entity, PrimaryColumn, ManyToOne, JoinColumn, CreateDateColumn } from 'typeorm';
+import * as typeorm from 'typeorm';
 import { Book } from './books.entity.js';
 import { Tag } from '../../tags/entities/tag.entity.js';
 
-@Entity('book_tags')
+@typeorm.Entity('book_tags')
 export class BookTag {
-  @PrimaryColumn({ type: 'uuid' })
+  @typeorm.PrimaryColumn({ type: 'uuid' })
   bookId: string;
 
-  @PrimaryColumn({ type: 'uuid' })
+  @typeorm.PrimaryColumn({ type: 'uuid' })
   tagId: string;
 
-  @ManyToOne(() => Book, (book) => book.bookTags, { onDelete: 'CASCADE' })
-  @JoinColumn({ name: 'bookId' })
-  book: Book;
+  @typeorm.ManyToOne(() => Book, (book) => book.bookTags, { onDelete: 'CASCADE' })
+  @typeorm.JoinColumn({ name: 'bookId' })
+  book: typeorm.Relation<Book>;
 
-  @ManyToOne(() => Tag, (tag) => tag.bookTags, { onDelete: 'CASCADE' })
-  @JoinColumn({ name: 'tagId' })
-  tag: Tag;
+  @typeorm.ManyToOne(() => Tag, (tag) => tag.bookTags, { onDelete: 'CASCADE' })
+  @typeorm.JoinColumn({ name: 'tagId' })
+  tag: typeorm.Relation<Tag>;
 
-  @CreateDateColumn()
+  @typeorm.CreateDateColumn()
   createdAt: Date;
 }

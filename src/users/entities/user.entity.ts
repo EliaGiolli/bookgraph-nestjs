@@ -1,48 +1,41 @@
-import {
-    Entity,
-    PrimaryGeneratedColumn,
-    Column,
-    CreateDateColumn,
-    UpdateDateColumn,
-    OneToMany
-} from 'typeorm';
+import * as typeorm from 'typeorm';
 import { Book } from '../../books/entities/books.entity.js';
 import { UserRole } from '../../common/types/enums/user-role.enum.js';
 import { Tag } from '../../tags/entities/tag.entity.js';
 
-@Entity('users')
+@typeorm.Entity('users')
 export class User {
-    @PrimaryGeneratedColumn('uuid')
+  @typeorm.PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column({ type: 'varchar', length: 100 })
+  @typeorm.Column({ type: 'varchar', length: 100 })
   name: string;
 
-  @Column({ type: 'varchar', length: 100 })
+  @typeorm.Column({ type: 'varchar', length: 100 })
   lastName: string;
 
-  @Column({ type: 'varchar', length: 50, unique: true })
+  @typeorm.Column({ type: 'varchar', length: 50, unique: true })
   username: string;
 
-  @Column({ type: 'varchar', select: false }) // Nasconde l'hash dalle query standard per sicurezza
+  @typeorm.Column({ type: 'varchar', select: false }) // Nasconde l'hash dalle query standard per sicurezza
   hashedPassword: string;
 
-  @Column({
+  @typeorm.Column({
     type: 'enum',
     enum: UserRole,
     default: UserRole.USER,
   })
   role: UserRole;
 
-  @OneToMany(() => Book, (book) => book.user)
-  books: Book[];
+  @typeorm.OneToMany(() => Book, (book) => book.user)
+  books: typeorm.Relation<Book[]>;
 
-  @OneToMany(() => Tag, (tag) => tag.user)
-  tags: Tag[];
+  @typeorm.OneToMany(() => Tag, (tag) => tag.user)
+  tags: typeorm.Relation<Tag[]>;
 
-  @CreateDateColumn()
+  @typeorm.CreateDateColumn()
   createdAt: Date;
 
-  @UpdateDateColumn()
+  @typeorm.UpdateDateColumn()
   updatedAt: Date;
 }
