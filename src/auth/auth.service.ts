@@ -11,6 +11,7 @@ export class AuthService {
         private jwtService: JwtService
     ) {}
 
+    // Signs in with jwt
     async signin(username:string, password:string) {
         const user = await this.usersService.findOne(username);
         if(user?.hashedPassword !== password) {
@@ -22,5 +23,10 @@ export class AuthService {
         return {
             access_token: await this.jwtService.signAsync(payload)
         }
+    }
+
+    // Looks up the user identified by the verified JWT payload.
+    async validateUser(payload: { sub: string }): Promise<any> {
+        return await this.usersService.findOneById(payload.sub);
     }
 }
