@@ -18,6 +18,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { UsersModule } from './users/users.module.js';
 import { TagsModule } from './tags/tags.module.js';
 import { AuthorModule } from './author/author.module.js';
+import { AuthModule } from './auth/auth.module.js';
 
 @Module({
   imports: [
@@ -45,6 +46,7 @@ import { AuthorModule } from './author/author.module.js';
     UsersModule,
     TagsModule,
     AuthorModule,
+    AuthModule,
   ],
   controllers: [AppController],
   providers: [],

@@ -1,8 +1,15 @@
 # BookGraph
 
+> A NestJS API for a personal book archive, built around books, authors, tags, reading status, and discovery connections.
+
+![Status](https://img.shields.io/badge/status-in%20development-e0a458?style=flat-square)
+![NestJS](https://img.shields.io/badge/NestJS-12-e0234e?style=flat-square&logo=nestjs&logoColor=white)
+![TypeScript](https://img.shields.io/badge/TypeScript-6-3178c6?style=flat-square&logo=typescript&logoColor=white)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-TypeORM-336791?style=flat-square&logo=postgresql&logoColor=white)
+
 BookGraph is a NestJS API for a personal book archive. Its data model is being built around reading status, book ownership, authors, tags, and connections that describe how one book led to another.
 
-The project is in active development. PostgreSQL persistence, TypeORM entities, an initial migration, seed data, Swagger documentation, and scaffolded resource modules are present. Authentication, authorization, and a graph-facing API are not implemented yet.
+The project is in active development. PostgreSQL persistence, TypeORM entities, an initial migration, seed data, Swagger documentation, scaffolded resource modules, and the first authentication flow are present. Authorization and the graph-facing API are still being built.
 
 ## Current implementation
 
@@ -29,15 +36,73 @@ The currently registered resource routes are scaffolded CRUD routes:
 | Users | `POST /users`, `GET /users`, `GET /users/:id`, `PATCH /users/:id`, `DELETE /users/:id` |
 | Tags | `POST /tags`, `GET /tags`, `GET /tags/:id`, `PATCH /tags/:id`, `DELETE /tags/:id` |
 | Authors | `POST /author`, `GET /author`, `GET /author/:id`, `PATCH /author/:id`, `DELETE /author/:id` |
+| Auth | `POST /auth/register`, `POST /auth/login` |
 
-These services currently return placeholder responses rather than reading from or writing to the database. The book service has repository-backed `findAll`, `findOne`, and `remove` methods, but the `BookController` does not expose `/book` routes yet. There is no implemented authentication or authorization layer, despite the placeholder `auth/` and `admin/` directories.
+Most resource services still return placeholder responses rather than reading from or writing to the database. The book service has repository-backed `findAll`, `findOne`, and `remove` methods, but the `BookController` does not expose `/book` routes yet.
 
-Incoming requests pass through a global `ValidationPipe` with transformation, whitelisting, and rejection of non-whitelisted properties. The current DTO classes are empty, so meaningful request payloads are not accepted by the scaffolded endpoints yet.
+Incoming requests pass through a global `ValidationPipe` with transformation, whitelisting, and rejection of non-whitelisted properties. Authentication DTOs are validated; several scaffolded resource DTOs still need their request fields defined.
+
+## Authentication 🔐
+
+The current authentication scope covers registration and login. Authorization rules and protected business routes will be added during the remaining steps of point 3.
+
+### Registration
+
+`POST /auth/register` accepts a validated `AuthRegisterDto` containing:
+
+```json
+{
+	"name": "Ada",
+	"lastName": "Lovelace",
+	"username": "ada",
+	"password": "a-strong-password"
+}
+```
+
+`AuthService` checks whether the username already exists, hashes the password with `bcrypt`, and delegates persistence to `UsersService`. The response excludes `hashedPassword`.
+
+### Login
+
+`POST /auth/login` accepts the username and password, compares the submitted password with the stored bcrypt hash, and signs a JWT with `JwtService` after successful authentication. The JWT is returned as an `HttpOnly` `access_token` cookie.
+
+```json
+{
+	"username": "ada",
+	"password": "a-strong-password"
+}
+```
+
+The cookie is configured with `HttpOnly`, `SameSite=Lax`, a one-minute lifetime matching the current JWT expiry, and `Secure` in production. `cookie-parser` makes the cookie available to the JWT strategy.
+
+### Current authentication flow
+
+```mermaid
+flowchart LR
+		Client[Client] -->|POST /auth/register| Register[AuthController]
+		Register --> RegisterService[AuthService.register]
+		RegisterService -->|bcrypt.hash| Users[UsersService]
+		Users --> Database[(PostgreSQL)]
+
+		Client -->|POST /auth/login| Login[AuthController]
+		Login --> LoginService[AuthService.signin]
+		LoginService -->|bcrypt.compare| Users
+		LoginService -->|signAsync| Jwt[JwtService]
+		Jwt -->|HttpOnly access_token| Client
+
+		Client -->|cookie or Bearer token| Strategy[JwtStrategy]
+		Strategy --> Validate[AuthService.validateUser]
+		Validate --> Users
+```
+
+`JwtStrategy` can extract a token from the `access_token` cookie or from an `Authorization: Bearer <token>` header. The reusable `JwtAuthGuard` is available in `src/common/guards`, while applying it to domain routes and completing authorization are part of the remaining point 3 work.
 
 ## Technology
 
 - NestJS 12, TypeScript, and Node.js
 - PostgreSQL with TypeORM
+- `@nestjs/jwt`, Passport, and `passport-jwt`
+- `bcrypt` for password hashing
+- `cookie-parser` for JWT cookie extraction
 - Zod for `PORT` validation
 - `class-validator` and `class-transformer` for Nest validation support
 - Swagger / OpenAPI
@@ -129,15 +194,17 @@ src/
 ├── users/                     # User module, entity, DTOs, and scaffolded routes
 ├── author/                    # Author module, entity, DTOs, and scaffolded routes
 ├── tags/                      # Tag module, entity, DTOs, and scaffolded routes
+├── common/guards/             # Reusable JWT guard
 ├── common/types/enums/        # User and book status enums
 ├── config/                    # TypeORM data source and Swagger/environment config
 ├── lib/database/seeds/        # Development database seed script
 ├── lib/schemas/               # Runtime environment schema
+├── auth/                      # Registration, login, JWT service, and strategy
 └── migrations/                # TypeORM migrations
 test/                          # End-to-end tests
 ```
 
-The `auth/`, `admin/`, and `content/` directories are currently placeholders or unused development areas. There is no frontend application in this repository.
+The `admin/` and `content/` directories are currently placeholders or unused development areas. There is no frontend application in this repository.
 
 ## Development status
 
@@ -150,13 +217,16 @@ Implemented foundation:
 - Development seed data
 - Swagger route
 - Global request validation configuration
+- Password hashing and user registration flow
+- JWT login with an `HttpOnly` cookie
+- JWT strategy with cookie and Bearer token extraction
 - Vitest unit/e2e test setup
 
 Next implementation work includes:
 
 - Complete DTOs and database-backed CRUD services
 - Expose book and graph-connection endpoints
-- Implement authentication and authorization
+- Complete protected routes and authorization guards
 - Add meaningful integration and e2e coverage
 - Build the graph-oriented client experience
 
