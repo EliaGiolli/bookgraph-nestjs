@@ -12,8 +12,9 @@ export class UsersService {
     private readonly usersRepository: Repository<User>,
   ) {}
 
-  create(createUserDto: CreateUserDto) {
-    return 'This action adds a new user';
+  create(createUserDto: CreateUserDto):Promise<User> {
+    const user = this.usersRepository.create(createUserDto);
+    return this.usersRepository.save(user);
   }
 
   findAll() {

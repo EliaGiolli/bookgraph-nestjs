@@ -4,6 +4,9 @@ import { ExtractJwt, Strategy } from 'passport-jwt';
 import { AuthService } from '../auth.service.js';
 import { jwtConstants } from '../constants.js';
 
+const cookieExtractor = (request: { cookies?: Record<string, string> }) =>
+  request.cookies?.access_token ?? null;
+
 type JwtPayload = {
   sub: string;
   username: string;
@@ -13,7 +16,10 @@ type JwtPayload = {
 export class JwtStrategy extends PassportStrategy(Strategy) {
   constructor(private readonly authService: AuthService) {
     super({
-      jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
+      jwtFromRequest: ExtractJwt.fromExtractors([
+        cookieExtractor,
+        ExtractJwt.fromAuthHeaderAsBearerToken(),
+      ]),
       secretOrKey: jwtConstants.secret,
     });
   }
