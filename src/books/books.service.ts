@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Book } from './entities/books.entity.js';
@@ -11,12 +11,29 @@ export class BooksService {
     ){}
 
     findAll(): Promise<Book[]> {
-        return this.bookRepository.find();
+        return this.bookRepository.find({
+            // loads author and user into the payload
+            relations: {
+                author: true,
+                user: true,
+            }
+        });
     }
 
-    findOne(id:string):Promise<Book | null>{
-        // the findOneOrFail() method prevents IDOR
-        return this.bookRepository.findOneByOrFail({ id });
+    async findOne(id: string): Promise<Book> {
+        const book = await this.bookRepository.findOne({
+            where: { id },
+            relations: {
+                author: true,
+                user: true,
+            },
+        });
+
+        if (!book) {
+            throw new NotFoundException(`Book with ID "${id}" not found`);
+        }
+
+        return book;
     }
 
     async remove(id:string):Promise<void> {
