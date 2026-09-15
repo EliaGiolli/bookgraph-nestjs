@@ -1,12 +1,14 @@
 import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
 import { AuthService } from '../auth.service.js';
-import { jwtConstants } from '../constants.js';
 
 const cookieExtractor = (request: { cookies?: Record<string, string> }) =>
+  // Read the JWT from the HttpOnly cookie when a browser client is used.
   request.cookies?.access_token ?? null;
 
+// These claims are created by AuthService when the JWT is issued.
 type JwtPayload = {
   sub: string;
   username: string;
@@ -14,23 +16,31 @@ type JwtPayload = {
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
-  constructor(private readonly authService: AuthService) {
+  constructor(
+    private readonly authService: AuthService,
+    configService: ConfigService,
+  ) {
     super({
+      // Accept both the application cookie and the standard Bearer header.
       jwtFromRequest: ExtractJwt.fromExtractors([
         cookieExtractor,
         ExtractJwt.fromAuthHeaderAsBearerToken(),
       ]),
-      secretOrKey: jwtConstants.secret,
+      // The same environment secret must be used when signing and verifying tokens.
+      secretOrKey: configService.getOrThrow<string>('JWT_SECRET'),
     });
   }
 
   async validate(payload: JwtPayload) {
+    // Passport calls validate after the JWT signature and expiration are verified.
     const user = await this.authService.validateUser(payload);
 
     if (!user) {
+      // Reject valid tokens that refer to a deleted or unknown user.
       throw new UnauthorizedException();
     }
 
+    // Passport assigns this value to request.user for downstream guards/controllers.
     return user;
   }
 }

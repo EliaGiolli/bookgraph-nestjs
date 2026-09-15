@@ -1,10 +1,11 @@
 import { Module } from '@nestjs/common';
+import { APP_GUARD } from '@nestjs/core';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 
 // Modules
 import { AppController } from './app.controller.js';
 import { BooksModule } from './books/books.module.js';
-
+import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 //Entities
 import { User } from './users/entities/user.entity.js';
 import { Book } from './books/entities/books.entity.js';
@@ -22,11 +23,15 @@ import { AuthModule } from './auth/auth.module.js';
 
 @Module({
   imports: [
+    BooksModule,
+    UsersModule,
+    TagsModule,
+    AuthorModule,
+    AuthModule,
     ConfigModule.forRoot({
       isGlobal: true,
       envFilePath: '.env'
     }),
-    BooksModule,
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
@@ -43,12 +48,22 @@ import { AuthModule } from './auth/auth.module.js';
       })
 
     }),
-    UsersModule,
-    TagsModule,
-    AuthorModule,
-    AuthModule,
+    // The ThrottlerModule helps the app with rate limiting
+    ThrottlerModule.forRoot({
+      throttlers:[
+        {
+          ttl: 6000,
+          limit: 10, // The maximum number of request within the time-to-live
+        }
+      ]
+    })
   ],
   controllers: [AppController],
-  providers: [],
+  providers: [
+    {
+      provide: APP_GUARD,
+      useClass: ThrottlerGuard,
+    },
+  ],
 })
 export class AppModule {}

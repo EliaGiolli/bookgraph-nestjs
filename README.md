@@ -44,7 +44,7 @@ Incoming requests pass through a global `ValidationPipe` with transformation, wh
 
 ## Authentication 🔐
 
-The current authentication scope covers registration and login. Authorization rules and protected business routes will be added during the remaining steps of point 3.
+The current authentication scope covers registration, login, JWT authentication, an admin-only users route, and request throttling. Additional protected business routes will be added as the domain API is completed.
 
 ### Registration
 
@@ -94,7 +94,9 @@ flowchart LR
 		Validate --> Users
 ```
 
-`JwtStrategy` can extract a token from the `access_token` cookie or from an `Authorization: Bearer <token>` header. The reusable `JwtAuthGuard` is available in `src/common/guards`, while applying it to domain routes and completing authorization are part of the remaining point 3 work.
+`JwtStrategy` can extract a token from the `access_token` cookie or from an `Authorization: Bearer <token>` header. The reusable `JwtAuthGuard` is available in `src/common/guards` and is currently applied to the users controller.
+
+`JwtAuthGuard` verifies the token and populates `request.user`. `RolesGuard` and `@Roles()` provide role-based authorization; `GET /users` currently requires the `ADMIN` role. The global throttler allows 10 requests per six seconds by default, while `/auth/register` and `/auth/login` allow 5 requests per six seconds.
 
 ## Technology
 
@@ -128,6 +130,7 @@ Create a `.env` file in the project root. The application uses these database va
 
 ```dotenv
 PORT=3000
+JWT_SECRET=<long-random-secret>
 DB_HOST=localhost
 DB_PORT=5432
 DB_USERNAME=<your-postgres-user>
@@ -220,13 +223,15 @@ Implemented foundation:
 - Password hashing and user registration flow
 - JWT login with an `HttpOnly` cookie
 - JWT strategy with cookie and Bearer token extraction
+- JWT authentication guard and role-based authorization guard
+- Global request throttling with stricter auth endpoint limits
 - Vitest unit/e2e test setup
 
 Next implementation work includes:
 
 - Complete DTOs and database-backed CRUD services
 - Expose book and graph-connection endpoints
-- Complete protected routes and authorization guards
+- Extend protection and role authorization to the remaining domain routes
 - Add meaningful integration and e2e coverage
 - Build the graph-oriented client experience
 

@@ -10,16 +10,19 @@ import { AuthService } from './auth.service.js';
 import { AuthRegisterDto } from './dto/auth-register.dto.js';
 import { LoginDto } from './dto/auth-login.dto.js';
 
+import { Throttle } from '@nestjs/throttler';
 
 @Controller('auth')
 export class AuthController {
     constructor(private readonly authService: AuthService) {}
 
+    @Throttle({ default: { limit: 5, ttl: 6000 }})
     @Post('register')
     register(@Body() registerDto: AuthRegisterDto) {
         return this.authService.register(registerDto);
     }
 
+    @Throttle({ default: { limit: 5, ttl: 6000 }})
     @Post('login')
     async login(@Body() loginDto: LoginDto, @Res({ passthrough: true }) response: Response) {
         const result = await this.authService.signin(
