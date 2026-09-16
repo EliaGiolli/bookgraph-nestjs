@@ -20,18 +20,21 @@ import { UsersModule } from './users/users.module.js';
 import { TagsModule } from './tags/tags.module.js';
 import { AuthorModule } from './author/author.module.js';
 import { AuthModule } from './auth/auth.module.js';
+import { EnvSchema } from './lib/schemas/env.schema.js';
 
 @Module({
   imports: [
+    ConfigModule.forRoot({
+      isGlobal: true,
+      envFilePath: '.env',
+      // validates the Zod schema when the server starts
+      validate: (config) => EnvSchema.parse(config)
+    }),
+    AuthModule,
     BooksModule,
     UsersModule,
     TagsModule,
     AuthorModule,
-    AuthModule,
-    ConfigModule.forRoot({
-      isGlobal: true,
-      envFilePath: '.env'
-    }),
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
@@ -40,7 +43,7 @@ import { AuthModule } from './auth/auth.module.js';
         host: configService.get<string>('DB_HOST', 'localhost'),
         port: configService.get<number>('DB_PORT', 5432),
         username: configService.get<string>('DB_USERNAME', 'bookgraph'),
-        password: String(configService.get<string>('DB_PASSWORD')),
+        password: configService.get<string>('DB_PASSWORD'),
         database: configService.get<string>('DB_NAME', 'bookgraph'),
         entities: [User, Author, Tag, BookTag, BookConnection, Book],
         synchronize: false, // change to 'false' in production

@@ -1,30 +1,36 @@
-import { IsNumber, IsString, IsNotEmpty, IsDate } from 'class-validator';
+import { IsDate, IsEnum, IsOptional, IsString, IsUUID } from 'class-validator';
 import { Type } from 'class-transformer';
+import { BookRole } from '../../common/types/enums/book-role.enum.js';
 
 export class CreateBookDto {
-
-    @IsNotEmpty()
-    @IsNumber()
-    readonly id: number;
-
     @IsString()
-    @IsNotEmpty()
-    @Type(() => String)
     readonly title: string;
-    
-    @IsString()
-    @IsNotEmpty()
-    @Type(() => String)
-    readonly author: string;
 
-    @IsNumber()
-    @IsNotEmpty()
-    @IsDate()
-    @Type(() => Number)
-    readonly year: number;
-    
+    @IsOptional()
     @IsString()
-    @IsNotEmpty()
-    @Type(() => String)
-    readonly genre: string;
+    readonly description?: string;
+
+    @IsOptional()
+    @IsDate()
+    @Type(() => Date)
+    readonly publishedDate?: Date;
+
+    @IsOptional()
+    @IsString()
+    readonly genre?: string;
+
+    @IsOptional()
+    @IsString()
+    readonly coverImg?: string;
+
+    @IsOptional()
+    @IsString()
+    readonly isbn?: string;
+
+    @IsOptional()
+    @IsEnum(BookRole)
+    readonly status?: BookRole;
+
+    @IsUUID()
+    readonly authorId: string
 }

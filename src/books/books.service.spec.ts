@@ -2,6 +2,8 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { BooksService } from './books.service.js';
 import { Book } from './entities/books.entity.js';
+import { Author } from '../author/entities/author.entity.js';
+import { User } from '../users/entities/user.entity.js';
 
 describe('BooksService', () => {
   let service: BooksService;
@@ -11,6 +13,8 @@ describe('BooksService', () => {
       providers: [
         BooksService,
         { provide: getRepositoryToken(Book), useValue: {} },
+        { provide: getRepositoryToken(Author), useValue: {} },
+        { provide: getRepositoryToken(User), useValue: {} },
       ],
     }).compile();
 

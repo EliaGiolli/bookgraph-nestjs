@@ -32,15 +32,12 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
   }
 
   async validate(payload: JwtPayload) {
-    // Passport calls validate after the JWT signature and expiration are verified.
     const user = await this.authService.validateUser(payload);
 
     if (!user) {
-      // Reject valid tokens that refer to a deleted or unknown user.
       throw new UnauthorizedException();
     }
 
-    // Passport assigns this value to request.user for downstream guards/controllers.
     return user;
   }
 }
