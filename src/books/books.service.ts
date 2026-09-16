@@ -34,9 +34,9 @@ export class BooksService {
         }
 
         const book = this.bookRepository.create({
-        ...bookData,
-        author,
-        user,
+            ...bookData,
+            author,
+            user,
         });
 
         return await this.bookRepository.save(book);
@@ -53,20 +53,20 @@ export class BooksService {
 
         // Filtro per ricerca testuale (titolo o nome dell'autore)
         if (search) {
-        query.andWhere(
-            '(LOWER(book.title) LIKE LOWER(:search) OR LOWER(author.name) LIKE LOWER(:search))',
-            { search: `%${search}%` },
-        );
+            query.andWhere(
+                '(LOWER(book.title) LIKE LOWER(:search) OR LOWER(author.name) LIKE LOWER(:search))',
+                { search: `%${search}%` },
+            );
         }
 
         // Filtro per ID autore specifico
         if (authorId) {
-        query.andWhere('author.id = :authorId', { authorId });
+            query.andWhere('author.id = :authorId', { authorId });
         }
 
         // Filtro per ID tag specifico
         if (tagId) {
-        query.andWhere('tag.id = :tagId', { tagId });
+            query.andWhere('tag.id = :tagId', { tagId });
         }
 
         return await query.getMany();
