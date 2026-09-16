@@ -27,7 +27,7 @@ import { CreateBookDto } from './dto/create-book.dto.js';
 import { GetBooksFilterDto } from './dto/get-book-filter.dto.js';
 
 // Guards
-import { AuthGuard } from '@nestjs/passport';
+import {JwtAuthGuard} from '../common/guards/jwt-auth.guard.js';
 import { UpdateBookDto } from './dto/update-book.dto.js';
 import { DeleteBookDto } from './dto/delete-book.dto.js';
 
@@ -51,13 +51,13 @@ export class BooksController {
     return this.booksService.findOne(id);
   }
 
-  @UseGuards(AuthGuard)
+  @UseGuards(JwtAuthGuard)
   @Post('books')
   createBook(@Body() createBookDto: CreateBookDto, id: string) {
     return this.booksService.create(createBookDto, id)
   }
 
-  @UseGuards(AuthGuard)
+  @UseGuards(JwtAuthGuard)
   @Patch(':id')
   updateBook(
     @Body() updateBookDto: UpdateBookDto,
@@ -73,7 +73,7 @@ export class BooksController {
     return this.booksService.update(id, updateBookDto, userId);
   }
 
-  @UseGuards(AuthGuard)
+  @UseGuards(JwtAuthGuard)
   @Delete(':id')
   deleteBook(
     @Param('id', ParseUUIDPipe) id: string,

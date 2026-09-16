@@ -1,5 +1,5 @@
 import { vi } from 'vitest';
-import { BooksController } from './book.controller.js';
+import { BooksController } from './books.controller.js';
 import { BooksService } from './books.service.js';
 
 describe('BooksController', () => {
