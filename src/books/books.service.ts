@@ -4,8 +4,10 @@ import { Repository } from 'typeorm';
 import { Book } from './entities/books.entity.js';
 import { Author } from '../author/entities/author.entity.js';
 import { User } from '../users/entities/user.entity.js';
+// DTOs  
 import { CreateBookDto } from './dto/create-book.dto.js';
 import { UpdateBookDto } from './dto/update-book.dto.js';
+import { GetBooksFilterDto } from './dto/get-book-filter.dto.js';
 
 @Injectable()
 export class BooksService {
@@ -43,13 +45,15 @@ export class BooksService {
     }
 
 
-    async findAll(search?: string, authorId?: string, tagId?: string): Promise<Book[]> {
+    async findAll(filterDto: GetBooksFilterDto): Promise<Book[]> {
+        const { search, authorId, tagId, status } = filterDto;
+        
         const query = this.bookRepository
-        .createQueryBuilder('book')
-        .leftJoinAndSelect('book.author', 'author')
-        .leftJoinAndSelect('book.user', 'user')
-        .leftJoinAndSelect('book.bookTags', 'bookTag')
-        .leftJoinAndSelect('bookTag.tag', 'tag');
+            .createQueryBuilder('book')
+            .leftJoinAndSelect('book.author', 'author')
+            .leftJoinAndSelect('book.user', 'user')
+            .leftJoinAndSelect('book.bookTags', 'bookTag')
+            .leftJoinAndSelect('bookTag.tag', 'tag');
 
         // Filtro per ricerca testuale (titolo o nome dell'autore)
         if (search) {

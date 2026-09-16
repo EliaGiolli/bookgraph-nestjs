@@ -5,7 +5,6 @@ import {
   Patch, 
   Delete, 
   Param, 
-  Request,
   Query, 
   ParseUUIDPipe, 
   UseGuards,
@@ -23,7 +22,9 @@ import {
 //Services, Entities and so on
 import { BooksService } from './books.service.js';
 import { Book } from './entities/books.entity.js';
+// DTOs
 import { CreateBookDto } from './dto/create-book.dto.js';
+import { GetBooksFilterDto } from './dto/get-book-filter.dto.js';
 
 // Guards
 import { AuthGuard } from '@nestjs/passport';
@@ -37,16 +38,9 @@ export class BooksController {
 
   @Get()
   @ApiOperation({ summary: 'Retrieve public list of books with optional search filters' })
-  @ApiQuery({ name: 'search', required: false, description: 'Filter by title or author name' })
-  @ApiQuery({ name: 'authorId', required: false, description: 'Filter by Author UUID' })
-  @ApiQuery({ name: 'tagId', required: false, description: 'Filter by Tag UUID' })
   @ApiResponse({ status: 200, description: 'List of books retrieved successfully.' })
-  findAll(
-    @Query('search') search?: string,
-    @Query('authorId') authorId?: string,
-    @Query('tagId') tagId?: string,
-  ): Promise<Book[]> {
-    return this.booksService.findAll(search, authorId, tagId);
+  findAll(@Query() filterDto: GetBooksFilterDto): Promise<Book[]> {
+    return this.booksService.findAll(filterDto);
   }
 
   @Get(':id')
