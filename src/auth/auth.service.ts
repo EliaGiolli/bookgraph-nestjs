@@ -19,7 +19,7 @@ export class AuthService {
 
     // registers a new user with hashed password
     async register(registerDto: AuthRegisterDto) {
-        const extinguishUser = await this.usersService.findOne(registerDto.username);
+        const extinguishUser = await this.usersService.findByUsername(registerDto.username);
         if(extinguishUser){
             throw new ConflictException('Lo username esiste già');
         }
@@ -40,7 +40,7 @@ export class AuthService {
     }
     // Signs in with jwt
     async signin(username:string, password:string) {
-        const user = await this.usersService.findOne(username);
+        const user = await this.usersService.findByUsername(username);
         
         if(!user) {
             throw new UnauthorizedException('Credenziali non valide');
