@@ -21,6 +21,8 @@ import { TagsModule } from './tags/tags.module.js';
 import { AuthorModule } from './author/author.module.js';
 import { AuthModule } from './auth/auth.module.js';
 import { EnvSchema } from './lib/schemas/env.schema.js';
+import { BookConnectionsModule } from './book-connections/book-connections.module.js';
+import { GraphModule } from './graph/graph.module.js';
 
 @Module({
   imports: [
@@ -59,7 +61,9 @@ import { EnvSchema } from './lib/schemas/env.schema.js';
           limit: 10, // The maximum number of request within the time-to-live
         }
       ]
-    })
+    }),
+    BookConnectionsModule,
+    GraphModule
   ],
   controllers: [AppController],
   providers: [

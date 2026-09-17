@@ -53,7 +53,7 @@ export class Book {
   @typeorm.OneToMany(() => BookTag, (bookTag) => bookTag.book)
   bookTags: typeorm.Relation<BookTag[]>;
 
-  // Connessioni del Grafo (Self-Referential)
+  // Graph connections (Self-Referential)
   @typeorm.OneToMany(() => BookConnection, (conn) => conn.sourceBook)
   sourceConnections: typeorm.Relation<BookConnection[]>;
 
