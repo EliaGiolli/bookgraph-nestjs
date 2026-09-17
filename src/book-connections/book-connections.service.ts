@@ -59,4 +59,16 @@ export class BookConnectionsService {
 
     return await this.connectionRepository.save(newConnection);
   }
+
+  async remove(id: string, userId: string): Promise<void> {
+    const connection = await this.connectionRepository.findOne({
+      where: { id, userId },
+    });
+
+    if (!connection) {
+      throw new NotFoundException('Connection not found or does not belong to you');
+    }
+
+    await this.connectionRepository.remove(connection);
+  }
 }

@@ -1,26 +1,40 @@
 import { Injectable } from '@nestjs/common';
-import { CreateGraphDto } from './dto/create-graph.dto.js';
-import { UpdateGraphDto } from './dto/update-graph.dto.js';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { Book } from '../books/entities/books.entity.js';
+import { BookConnection } from '../book-connections/entities/book-connection.entity.js';
+import { GraphResponseDto } from './dto/graph-response.dto.js';
 
 @Injectable()
 export class GraphService {
-  create(createGraphDto: CreateGraphDto) {
-    return 'This action adds a new graph';
-  }
+  constructor(
+    @InjectRepository(Book)
+    private readonly bookRepository: Repository<Book>,
+    @InjectRepository(BookConnection)
+    private readonly connectionRepository: Repository<BookConnection>,
+  ) {}
 
-  findAll() {
-    return `This action returns all graph`;
-  }
+  async getUserGraph(userId: string): Promise<GraphResponseDto> {
+    // Fetch in parallel
+    const [books, connections] = await Promise.all([
+      this.bookRepository.find({ where: { userId } }),
+      this.connectionRepository.find({ where: { userId } }),
+    ]);
 
-  findOne(id: number) {
-    return `This action returns a #${id} graph`;
-  }
+    // Mapping for the structure of vis-network
+    const nodes = books.map((book) => ({
+      id: book.id,
+      label: book.title,
+      group: book.status,
+    }));
 
-  update(id: number, updateGraphDto: UpdateGraphDto) {
-    return `This action updates a #${id} graph`;
-  }
+    const edges = connections.map((conn) => ({
+      id: conn.id,
+      from: conn.sourceBookId,
+      to: conn.discoveredBookId,
+      label: conn.description || undefined,
+    }));
 
-  remove(id: number) {
-    return `This action removes a #${id} graph`;
+    return { nodes, edges };
   }
 }
