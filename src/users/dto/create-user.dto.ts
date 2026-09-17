@@ -1,10 +1,37 @@
-import { User } from "../entities/user.entity.js";
+import { ApiProperty } from '@nestjs/swagger';
+import { IsNotEmpty, IsString, MinLength } from 'class-validator';
 
-// This exports only the types needed to save a new user
-// Pick is a utility type that creates a new type by only selecting some properties from an existing type
 export class CreateUserDto {
-    name!: string;
-    lastName!: string;
-    username!: string;
-    hashedPassword!: string;
+  @ApiProperty({
+    description: 'First name of the user',
+    example: 'Elia',
+  })
+  @IsString()
+  @IsNotEmpty()
+  name!: string;
+
+  @ApiProperty({
+    description: 'Last name of the user',
+    example: 'Giolli',
+  })
+  @IsString()
+  @IsNotEmpty()
+  lastName!: string;
+
+  @ApiProperty({
+    description: 'Unique username for the account',
+    example: 'eliagiolli',
+  })
+  @IsString()
+  @IsNotEmpty()
+  username!: string;
+
+  @ApiProperty({
+    description: 'Hashed password for the user',
+    example: '$2b$10$EixZaYVK1fsbw1ZfbX3OXePaWxn9.623123',
+  })
+  @IsString()
+  @IsNotEmpty()
+  @MinLength(8)
+  hashedPassword!: string;
 }
