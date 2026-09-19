@@ -6,6 +6,7 @@ import { AuthController } from './auth.controller.js';
 import { AuthService } from './auth.service.js';
 import { JwtStrategy } from './strategies/jwt.strategy.js';
 import { UsersModule } from '../users/users.module.js';
+import type { Duration } from '../common/utils/duration.util.js';
 
 // register() is the module that actually provides AuthModuleOptions.
 // JwtAuthGuard needs that token in every feature module that uses @UseGuards.
@@ -22,7 +23,10 @@ const passportModule = PassportModule.register({ defaultStrategy: 'jwt' });
       inject: [ConfigService],
       useFactory: (configService: ConfigService) => ({
         secret: configService.getOrThrow<string>('JWT_SECRET'),
-        signOptions: { expiresIn: '60s' },
+        signOptions: {
+          // The env schema already guarantees the "<number><unit>" shape.
+          expiresIn: configService.getOrThrow<Duration>('JWT_EXPIRATION'),
+        },
       }),
     }),
   ],

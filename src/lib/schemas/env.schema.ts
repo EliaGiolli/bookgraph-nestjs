@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { DURATION_PATTERN } from '../../common/utils/duration.util.js';
 
 export const EnvSchema = z.object({
   PORT: z.coerce
@@ -11,6 +12,13 @@ export const EnvSchema = z.object({
   JWT_SECRET: z.coerce
     .string()
     .min(32, { message: 'JWT_SECRET must be at least 32 characters long' }),
+
+  JWT_EXPIRATION: z.coerce
+    .string()
+    .regex(DURATION_PATTERN, {
+      message: 'JWT_EXPIRATION must be a duration like "60s", "15m", "2h" or "1d"',
+    })
+    .default('1d'),
 
   DB_HOST: z.coerce
     .string()

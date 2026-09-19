@@ -5,16 +5,29 @@ import {
     Res,
 } from '@nestjs/common';
 import type { Response } from 'express';
+import { ConfigService } from '@nestjs/config';
 
 import { AuthService } from './auth.service.js';
 import { AuthRegisterDto } from './dto/auth-register.dto.js';
 import { LoginDto } from './dto/auth-login.dto.js';
+import { durationToMs } from '../common/utils/duration.util.js';
 
 import { Throttle } from '@nestjs/throttler';
 
 @Controller('auth')
 export class AuthController {
-    constructor(private readonly authService: AuthService) {}
+    // Keeps the cookie alive exactly as long as the JWT it carries, so a browser
+    // client never holds a cookie whose token has already expired.
+    private readonly tokenMaxAgeMs: number;
+
+    constructor(
+        private readonly authService: AuthService,
+        configService: ConfigService,
+    ) {
+        this.tokenMaxAgeMs = durationToMs(
+            configService.getOrThrow<string>('JWT_EXPIRATION'),
+        );
+    }
 
     @Throttle({ default: { limit: 5, ttl: 6000 }})
     @Post('register')
@@ -34,7 +47,7 @@ export class AuthController {
             httpOnly: true,
             secure: process.env.NODE_ENV === 'production',
             sameSite: 'lax',
-            maxAge: 60 * 1000,
+            maxAge: this.tokenMaxAgeMs,
             path: '/',
         });
 
