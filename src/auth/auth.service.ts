@@ -1,7 +1,6 @@
-import { 
-    Injectable, 
+import {
+    Injectable,
     UnauthorizedException,
-    ConflictException 
 } from '@nestjs/common';
 
 import { UsersService } from '../users/users.service.js';
@@ -15,33 +14,23 @@ export class AuthService {
         private usersService: UsersService,
         private jwtService: JwtService,
     ) {}
-    private readonly saltRounds = 10;
 
-    // registers a new user with hashed password
+    // Registers a new user. Hashing and the duplicate-username check both live in
+    // UsersService.create, so self-signup and the ADMIN route share one path.
     async register(registerDto: AuthRegisterDto) {
-        const extinguishUser = await this.usersService.findByUsername(registerDto.username);
-        if(extinguishUser){
-            throw new ConflictException('Lo username esiste già');
-        }
-        const hashedPassword = await bcrypt.hash(
-            registerDto.password, 
-            this.saltRounds
-        );
-
-        const user = await this.usersService.create({
+        return await this.usersService.create({
             name: registerDto.name,
             lastName: registerDto.lastName,
             username: registerDto.username,
-            hashedPassword,
+            password: registerDto.password,
         });
-
-        const { hashedPassword: _, ...safeUser } = user;
-        return safeUser;
     }
     // Signs in with jwt
     async signin(username:string, password:string) {
-        const user = await this.usersService.findByUsername(username);
-        
+        // The hash is `select: false`, so the default lookup would return a user
+        // whose hashedPassword is undefined and make every login fail.
+        const user = await this.usersService.findByUsernameWithPassword(username);
+
         if(!user) {
             throw new UnauthorizedException('Credenziali non valide');
         }
