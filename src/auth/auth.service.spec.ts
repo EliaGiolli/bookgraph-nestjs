@@ -2,23 +2,25 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { JwtService } from '@nestjs/jwt';
 import { UsersService } from '../users/users.service.js';
 import { AuthService } from './auth.service.js';
-import { ConflictException, UnauthorizedException } from '@nestjs/common';
+import { UnauthorizedException } from '@nestjs/common';
 import bcrypt from 'bcrypt';
 import { UserRole } from '../common/types/enums/user-role.enum.js';
 
 describe('AuthService', () => {
   let service: AuthService;
   let usersService: {
-    findOne: ReturnType<typeof vi.fn>;
     create: ReturnType<typeof vi.fn>;
+    findByUsername: ReturnType<typeof vi.fn>;
+    findByUsernameWithPassword: ReturnType<typeof vi.fn>;
     findOneById: ReturnType<typeof vi.fn>;
   };
   let jwtService: { signAsync: ReturnType<typeof vi.fn> };
 
   beforeEach(async () => {
     usersService = {
-      findOne: vi.fn(),
       create: vi.fn(),
+      findByUsername: vi.fn(),
+      findByUsernameWithPassword: vi.fn(),
       findOneById: vi.fn(),
     };
     jwtService = { signAsync: vi.fn() };
@@ -38,9 +40,8 @@ describe('AuthService', () => {
     expect(service).toBeDefined();
   });
 
-  it('registers a user with a bcrypt hash and omits the hash from the response', async () => {
-    usersService.findOne.mockResolvedValue(null);
-    usersService.create.mockImplementation(async (data) => ({
+  it('delegates registration to UsersService with the plain password', async () => {
+    usersService.create.mockImplementation(async ({ password: _password, ...data }) => ({
       id: 'user-1',
       ...data,
       role: UserRole.USER,
@@ -53,40 +54,58 @@ describe('AuthService', () => {
       password: 'password-123',
     });
 
-    expect(usersService.create).toHaveBeenCalledWith(expect.objectContaining({
-      username: 'ada',
-      name: 'Ada',
-      lastName: 'Lovelace',
-      hashedPassword: expect.any(String),
-    }));
-    expect(await bcrypt.compare('password-123', usersService.create.mock.calls[0][0].hashedPassword)).toBe(true);
-    expect(result).not.toHaveProperty('hashedPassword');
-  });
-
-  it('rejects registration when the username already exists', async () => {
-    usersService.findOne.mockResolvedValue({ id: 'existing-user' });
-
-    await expect(service.register({
+    expect(usersService.create).toHaveBeenCalledWith({
       name: 'Ada',
       lastName: 'Lovelace',
       username: 'ada',
       password: 'password-123',
-    })).rejects.toBeInstanceOf(ConflictException);
-    expect(usersService.create).not.toHaveBeenCalled();
+    });
+    // The hash must never be forwarded from here, nor come back in the response.
+    expect(usersService.create.mock.calls[0][0]).not.toHaveProperty('hashedPassword');
+    expect(result).not.toHaveProperty('hashedPassword');
+  });
+
+  it('reads the credential record through the password-selecting lookup', async () => {
+    const hashedPassword = await bcrypt.hash('correct-password', 10);
+    usersService.findByUsernameWithPassword.mockResolvedValue({
+      id: 'user-1',
+      username: 'ada',
+      hashedPassword,
+    });
+    jwtService.signAsync.mockResolvedValue('signed-token');
+
+    await service.signin('ada', 'correct-password');
+
+    // Regression guard for the login bug: findByUsername omits the `select: false`
+    // hash, so using it here made bcrypt.compare fail for every user.
+    expect(usersService.findByUsernameWithPassword).toHaveBeenCalledWith('ada');
+    expect(usersService.findByUsername).not.toHaveBeenCalled();
   });
 
   it('rejects login for an unknown user or invalid password', async () => {
-    usersService.findOne.mockResolvedValueOnce(null);
-    await expect(service.signin('unknown', 'password-123')).rejects.toBeInstanceOf(UnauthorizedException);
+    usersService.findByUsernameWithPassword.mockResolvedValueOnce(null);
+    await expect(service.signin('unknown', 'password-123')).rejects.toBeInstanceOf(
+      UnauthorizedException,
+    );
 
     const hashedPassword = await bcrypt.hash('correct-password', 10);
-    usersService.findOne.mockResolvedValueOnce({ id: 'user-1', username: 'ada', hashedPassword });
-    await expect(service.signin('ada', 'wrong-password')).rejects.toBeInstanceOf(UnauthorizedException);
+    usersService.findByUsernameWithPassword.mockResolvedValueOnce({
+      id: 'user-1',
+      username: 'ada',
+      hashedPassword,
+    });
+    await expect(service.signin('ada', 'wrong-password')).rejects.toBeInstanceOf(
+      UnauthorizedException,
+    );
   });
 
   it('returns a signed JWT after valid login', async () => {
     const hashedPassword = await bcrypt.hash('correct-password', 10);
-    usersService.findOne.mockResolvedValue({ id: 'user-1', username: 'ada', hashedPassword });
+    usersService.findByUsernameWithPassword.mockResolvedValue({
+      id: 'user-1',
+      username: 'ada',
+      hashedPassword,
+    });
     jwtService.signAsync.mockResolvedValue('signed-token');
 
     await expect(service.signin('ada', 'correct-password')).resolves.toEqual({
