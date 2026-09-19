@@ -1,6 +1,9 @@
 # CLAUDE.md
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+Before doing anything always check
+1. NestJS skills (/.claude/skills/nestjs-best-practices/)
+2. Typescript skills (/.claude/skills/typescript-expert/)
 
 ## Commands
 
