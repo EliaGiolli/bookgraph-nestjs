@@ -5,7 +5,7 @@ import { Author } from '../../../author/entities/author.entity.js';
 import { Book } from '../../../books/entities/books.entity.js'
 import { Tag } from '../../../tags/entities/tag.entity.js'
 import { BookTag } from '../../../books/entities/book-tag.entity.js'
-import { BookConnection } from '../../../books/entities/book-connection.entity.js'
+import { BookConnection } from '../../../book-connections/entities/book-connection.entity.js'
 import { UserRole } from '../../../common/types/enums/user-role.enum.js';
 import { BookRole } from '../../../common/types/enums/book-role.enum.js';
 
@@ -89,18 +89,21 @@ async function runSeed() {
     console.log('✅ BookTags associations created');
 
     // 7. Creazione Archi del Grafo (10 BookConnection)
+    // `discoveryMethod` was dropped with the duplicate entity; the same
+    // information now lives in `description`, which is what the API exposes and
+    // GraphService renders as the edge label.
     const connectionsData = [
-      { sourceBookId: savedBooks[0].id, discoveredBookId: savedBooks[1].id, discoveryMethod: 'Direct Sequel' },
-      { sourceBookId: savedBooks[1].id, discoveredBookId: savedBooks[2].id, discoveryMethod: 'Direct Sequel' },
-      { sourceBookId: savedBooks[0].id, discoveredBookId: savedBooks[3].id, discoveryMethod: 'Influenced by' },
-      { sourceBookId: savedBooks[3].id, discoveredBookId: savedBooks[4].id, discoveryMethod: 'Direct Sequel' },
-      { sourceBookId: savedBooks[5].id, discoveredBookId: savedBooks[6].id, discoveryMethod: 'Sprawl Trilogy' },
-      { sourceBookId: savedBooks[5].id, discoveredBookId: savedBooks[7].id, discoveryMethod: 'Theme Similarity' },
-      { sourceBookId: savedBooks[7].id, discoveredBookId: savedBooks[8].id, discoveryMethod: 'Same Author' },
-      { sourceBookId: savedBooks[0].id, discoveredBookId: savedBooks[9].id, discoveryMethod: 'Classic Sci-Fi Recommendation' },
-      { sourceBookId: savedBooks[9].id, discoveredBookId: savedBooks[3].id, discoveryMethod: 'Worldbuilding Comparison' },
-      { sourceBookId: savedBooks[8].id, discoveredBookId: savedBooks[5].id, discoveryMethod: 'Proto-Cyberpunk Connection' },
-    ];
+      { sourceBookId: savedBooks[0].id, discoveredBookId: savedBooks[1].id, description: 'Direct Sequel' },
+      { sourceBookId: savedBooks[1].id, discoveredBookId: savedBooks[2].id, description: 'Direct Sequel' },
+      { sourceBookId: savedBooks[0].id, discoveredBookId: savedBooks[3].id, description: 'Influenced by' },
+      { sourceBookId: savedBooks[3].id, discoveredBookId: savedBooks[4].id, description: 'Direct Sequel' },
+      { sourceBookId: savedBooks[5].id, discoveredBookId: savedBooks[6].id, description: 'Sprawl Trilogy' },
+      { sourceBookId: savedBooks[5].id, discoveredBookId: savedBooks[7].id, description: 'Theme Similarity' },
+      { sourceBookId: savedBooks[7].id, discoveredBookId: savedBooks[8].id, description: 'Same Author' },
+      { sourceBookId: savedBooks[0].id, discoveredBookId: savedBooks[9].id, description: 'Classic Sci-Fi Recommendation' },
+      { sourceBookId: savedBooks[9].id, discoveredBookId: savedBooks[3].id, description: 'Worldbuilding Comparison' },
+      { sourceBookId: savedBooks[8].id, discoveredBookId: savedBooks[5].id, description: 'Proto-Cyberpunk Connection' },
+    ].map((connection) => ({ ...connection, userId: testUser.id }));
     await connectionRepository.save(connectionRepository.create(connectionsData));
     console.log(`✅ ${connectionsData.length} Graph connections created`);
 
