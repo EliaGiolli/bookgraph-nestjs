@@ -5,7 +5,7 @@ import { Author } from '../author/entities/author.entity.js';
 import { Book } from '../books/entities/books.entity.js';
 import { Tag } from '../tags/entities/tag.entity.js';
 import { BookTag } from '../books/entities/book-tag.entity.js';
-import { BookConnection } from '../books/entities/book-connection.entity.js';
+import { BookConnection } from '../book-connections/entities/book-connection.entity.js';
 
 // Loads envs directly form the .env file inside the root
 dotenv.config();

@@ -4,7 +4,6 @@ import { BooksService } from './books.service.js';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Book } from './entities/books.entity.js';
 import { BookTag } from './entities/book-tag.entity.js';
-import { BookConnection } from './entities/book-connection.entity.js';
 import { Author } from '../author/entities/author.entity.js';
 import { User } from '../users/entities/user.entity.js';
 
@@ -13,7 +12,6 @@ import { User } from '../users/entities/user.entity.js';
     TypeOrmModule.forFeature([
       Book,
       BookTag,
-      BookConnection,
       Author,
       User,
     ]),

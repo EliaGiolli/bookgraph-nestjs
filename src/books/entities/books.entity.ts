@@ -3,7 +3,7 @@ import { User } from '../../users/entities/user.entity.js';
 import { Author } from '../../author/entities/author.entity.js';
 import { BookRole } from '../../common/types/enums/book-role.enum.js';
 import { BookTag } from './book-tag.entity.js';
-import { BookConnection } from './book-connection.entity.js';
+import { BookConnection } from '../../book-connections/entities/book-connection.entity.js';
 
 @typeorm.Entity('books')
 export class Book {

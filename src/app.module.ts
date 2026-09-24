@@ -12,7 +12,7 @@ import { Book } from './books/entities/books.entity.js';
 import { Author } from './author/entities/author.entity.js';
 import { BookTag } from './books/entities/book-tag.entity.js';
 import { Tag } from './tags/entities/tag.entity.js';
-import { BookConnection } from './books/entities/book-connection.entity.js';
+import { BookConnection } from './book-connections/entities/book-connection.entity.js';
 
 // TypeORM
 import { TypeOrmModule } from '@nestjs/typeorm';
