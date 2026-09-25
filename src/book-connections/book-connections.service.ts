@@ -2,6 +2,7 @@ import {
   Injectable,
   NotFoundException,
   ConflictException,
+  BadRequestException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -20,6 +21,14 @@ export class BookConnectionsService {
 
   async create(createDto: CreateBookConnectionDto, userId: string): Promise<BookConnection> {
     const { sourceBookId, discoveredBookId, description } = createDto;
+
+    // 0. A book cannot be connected to itself. The DTO already rejects this, but
+    //    the service is also reachable from other callers (e.g. the seed).
+    if (sourceBookId === discoveredBookId) {
+      throw new BadRequestException(
+        'discoveredBookId must be different from sourceBookId',
+      );
+    }
 
     // 1. IDOR Validation: Verify that both books belong to the user
     const sourceBook = await this.bookRepository.findOne({
