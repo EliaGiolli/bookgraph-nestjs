@@ -11,12 +11,17 @@ describe('AuthController', () => {
     signin: ReturnType<typeof vi.fn>;
   };
 
-  const buildController = async (jwtExpiration: string) => {
+  const buildController = async (jwtExpiration: string, nodeEnv = 'development') => {
+    const configService = {
+      getOrThrow: () => jwtExpiration,
+      get: (key: string) => (key === 'NODE_ENV' ? nodeEnv : undefined),
+    };
+
     const module: TestingModule = await Test.createTestingModule({
       controllers: [AuthController],
       providers: [
         { provide: AuthService, useValue: authService },
-        { provide: ConfigService, useValue: { getOrThrow: () => jwtExpiration } },
+        { provide: ConfigService, useValue: configService },
       ],
     }).compile();
 
@@ -62,6 +67,25 @@ describe('AuthController', () => {
       maxAge: 86_400_000,
       path: '/',
     }));
+  });
+
+  it.each([
+    ['production', true],
+    ['development', false],
+    ['test', false],
+  ])('marks the cookie Secure only in production (NODE_ENV=%s)', async (nodeEnv, expected) => {
+    // Read through ConfigService now, not process.env directly.
+    controller = await buildController('1d', nodeEnv);
+    authService.signin.mockResolvedValue({ access_token: 'signed-token' });
+    const response = { cookie: vi.fn() } as unknown as Response;
+
+    await controller.login({ username: 'ada', password: 'password-123' }, response);
+
+    expect(response.cookie).toHaveBeenCalledWith(
+      'access_token',
+      'signed-token',
+      expect.objectContaining({ secure: expected }),
+    );
   });
 
   it('derives the cookie lifetime from the configured JWT_EXPIRATION', async () => {

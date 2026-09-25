@@ -1,14 +1,13 @@
 {
-  "name": "websocket-zenith-api",
+  "name": "bookgraph-nest",
   "version": "0.0.1",
-  "description": "",
-  "author": "",
+  "description": "NestJS REST API for BookGraph: a personal library and book-network graph platform.",
+  "author": "Elia Giolli",
   "private": true,
   "license": "UNLICENSED",
   "type": "module",
   "scripts": {
     "build": "nest build",
-    "deploy": "nest deploy",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
     "start": "nest start",
     "start:dev": "nest start --watch",
@@ -51,7 +50,6 @@
   },
   "devDependencies": {
     "@nestjs/cli": "^12.0.0",
-    "@nestjs/mau": "^0.2.6",
     "@nestjs/schematics": "^12.0.0",
     "@nestjs/testing": "^12.0.1",
     "@types/bcrypt": "^6.0.0",
