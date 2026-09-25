@@ -1,4 +1,3 @@
-import { DataSource } from 'typeorm';
 import dataSource from '../../../config/data-source.js';
 import { User } from '../../../users/entities/user.entity.js';
 import { Author } from '../../../author/entities/author.entity.js';
@@ -12,10 +11,12 @@ import { BookRole } from '../../../common/types/enums/book-role.enum.js';
 async function runSeed() {
   console.log('🌱 Starting database seeding...');
   
-  await dataSource.initialize();
-  const queryRunner = dataSource.createQueryRunner();
-
   try {
+    // Inside the try: a failed connection is the most likely way this script
+    // breaks, and it used to escape as an unhandled rejection.
+    await dataSource.initialize();
+    const queryRunner = dataSource.createQueryRunner();
+
     // 1. Pulizia tabelle per idempotenza (ordine inverso causa FK)
     await queryRunner.query('TRUNCATE TABLE "book_connections", "book_tags", "books", "tags", "authors", "users" CASCADE;');
 
@@ -110,9 +111,15 @@ async function runSeed() {
     console.log('🚀 Database Seeding completed successfully!');
   } catch (error) {
     console.error('❌ Error during database seeding:', error);
+    // Signal failure without process.exit(1), which would skip the finally
+    // block below and leak the connection. Node exits non-zero on its own.
+    process.exitCode = 1;
   } finally {
-    await dataSource.destroy();
+    // initialize() may itself have failed, so only tear down what came up.
+    if (dataSource.isInitialized) {
+      await dataSource.destroy();
+    }
   }
 }
 
-runSeed();
+await runSeed();

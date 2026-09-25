@@ -20,6 +20,10 @@ export class AuthController {
     // client never holds a cookie whose token has already expired.
     private readonly tokenMaxAgeMs: number;
 
+    // Marking the cookie Secure outside development; read through ConfigService
+    // so every environment lookup in the Nest context goes through one place.
+    private readonly isProduction: boolean;
+
     constructor(
         private readonly authService: AuthService,
         configService: ConfigService,
@@ -27,6 +31,7 @@ export class AuthController {
         this.tokenMaxAgeMs = durationToMs(
             configService.getOrThrow<string>('JWT_EXPIRATION'),
         );
+        this.isProduction = configService.get<string>('NODE_ENV') === 'production';
     }
 
     @Throttle({ default: { limit: 5, ttl: 6000 }})
@@ -45,7 +50,7 @@ export class AuthController {
 
         response.cookie('access_token', result.access_token, {
             httpOnly: true,
-            secure: process.env.NODE_ENV === 'production',
+            secure: this.isProduction,
             sameSite: 'lax',
             maxAge: this.tokenMaxAgeMs,
             path: '/',

@@ -42,14 +42,19 @@ import { GraphModule } from './graph/graph.module.js';
       inject: [ConfigService],
       useFactory: (configService: ConfigService) => ({
         type: 'postgres',
-        host: configService.get<string>('DB_HOST', 'localhost'),
-        port: configService.get<number>('DB_PORT', 5432),
-        username: configService.get<string>('DB_USERNAME', 'bookgraph'),
-        password: configService.get<string>('DB_PASSWORD'),
-        database: configService.get<string>('DB_NAME', 'bookgraph'),
+        // EnvSchema has already validated these and defaulted host/port, so no
+        // inline fallbacks belong here. The three required vars use getOrThrow
+        // rather than silently connecting as some made-up default user.
+        host: configService.get<string>('DB_HOST'),
+        port: configService.get<number>('DB_PORT'),
+        username: configService.getOrThrow<string>('DB_USERNAME'),
+        password: configService.getOrThrow<string>('DB_PASSWORD'),
+        database: configService.getOrThrow<string>('DB_NAME'),
         entities: [User, Author, Tag, BookTag, BookConnection, Book],
-        synchronize: false, // change to 'false' in production
-        logging: true // prints SQL queries in the console
+        synchronize: false, // schema changes go through migrations
+        // SQL logging is useful in development and noisy (and a disclosure risk)
+        // in production.
+        logging: configService.get<string>('NODE_ENV') !== 'production',
       })
 
     }),

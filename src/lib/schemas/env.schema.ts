@@ -2,6 +2,13 @@ import { z } from 'zod';
 import { DURATION_PATTERN } from '../../common/utils/duration.util.js';
 
 export const EnvSchema = z.object({
+  // Declared explicitly so the value is validated and documented. ConfigService
+  // would otherwise only resolve it through its process.env fallback, since
+  // EnvSchema.parse() strips keys the schema does not declare.
+  NODE_ENV: z
+    .enum(['development', 'production', 'test'])
+    .default('development'),
+
   PORT: z.coerce
     .number()
     .int()
