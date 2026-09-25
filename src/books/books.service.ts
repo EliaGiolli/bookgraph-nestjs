@@ -45,7 +45,7 @@ export class BooksService {
     }
 
 
-    async findAll(filterDto: GetBooksFilterDto): Promise<Book[]> {
+    async findAll(filterDto: GetBooksFilterDto, userId: string): Promise<Book[]> {
         const { search, authorId, tagId, status } = filterDto;
         
         const query = this.bookRepository
@@ -53,7 +53,9 @@ export class BooksService {
             .leftJoinAndSelect('book.author', 'author')
             .leftJoinAndSelect('book.user', 'user')
             .leftJoinAndSelect('book.bookTags', 'bookTag')
-            .leftJoinAndSelect('bookTag.tag', 'tag');
+            .leftJoinAndSelect('bookTag.tag', 'tag')
+            // A book belongs to one user: never return another library's books.
+            .where('book.userId = :userId', { userId });
 
         // Filtro per ricerca testuale (titolo o nome dell'autore)
         if (search) {
@@ -73,12 +75,17 @@ export class BooksService {
             query.andWhere('tag.id = :tagId', { tagId });
         }
 
+        // Filtro per stato di lettura
+        if (status) {
+            query.andWhere('book.status = :status', { status });
+        }
+
         return await query.getMany();
     }
 
-   async findOne(id: string): Promise<Book> {
+   async findOne(id: string, userId: string): Promise<Book> {
         const book = await this.bookRepository.findOne({
-            where: { id },
+            where: { id, userId },
             relations: {
                 author: true,
                 user: true,
@@ -89,14 +96,19 @@ export class BooksService {
         });
 
         if (!book) {
-            throw new NotFoundException(`Book with ID "${id}" not found`);
+            throw new NotFoundException(`Book with ID "${id}" not found or unauthorized`);
         }
 
         return book;
     }
 
-    async remove(id:string):Promise<void> {
-        await this.bookRepository.delete(id);
+    async remove(id: string, userId: string): Promise<void> {
+        // Scoped like update(): an unscoped delete(id) removes any user's book.
+        const result = await this.bookRepository.delete({ id, userId });
+
+        if (!result.affected) {
+            throw new NotFoundException(`Book with ID "${id}" not found or unauthorized`);
+        }
     }
 
     async update(id: string, updateBookDto: UpdateBookDto, userId: string): Promise<Book> {
