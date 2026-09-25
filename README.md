@@ -26,7 +26,7 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/Node.js-18%2B-339933?style=flat-square&logo=nodedotjs&logoColor=white" alt="Node.js"/>
+  <img src="https://img.shields.io/badge/Node.js-20%2B-339933?style=flat-square&logo=nodedotjs&logoColor=white" alt="Node.js"/>
   <img src="https://img.shields.io/badge/License-MIT-yellow?style=flat-square" alt="MIT License"/>
   <img src="https://img.shields.io/badge/API-REST-02569B?style=flat-square" alt="REST API"/>
   <img src="https://img.shields.io/badge/Documentation-Swagger-85EA2D?style=flat-square&logo=swagger&logoColor=black" alt="Swagger"/>
@@ -58,16 +58,16 @@ The backend exposes a dedicated graph endpoint capable of transforming books and
 
 | Feature                       | Description                                                    |
 | ----------------------------- | -------------------------------------------------------------- |
-| 🔐 **JWT Authentication**     | Secure registration and login with Bearer JWT authentication   |
-| 👤 **User Management**        | User CRUD operations and account management                    |
+| 🔐 **JWT Authentication**     | Registration and login; JWT via HttpOnly cookie or Bearer header |
+| 👤 **User Management**        | Self-service account management, admin-only user listing       |
 | 📚 **Book Management**        | Book catalogue with search, filtering, statuses, and metadata  |
 | ✍️ **Author Management**      | Author catalogue and book relationships                        |
 | 🏷️ **Tag Management**        | Custom book tags and categorization                            |
 | 🔗 **Book Connections**       | Directional relationships between books                        |
-| 🛡️ **Validation & Security** | DTO validation, ownership checks, and relationship constraints |
+| 🛡️ **Validation & Security** | DTO validation, ownership checks, roles, and rate limiting     |
 | 🕸️ **Graph Builder**         | Aggregates books and connections into `{ nodes, edges }`       |
 | 📖 **OpenAPI Documentation**  | Fully documented API through Swagger UI                        |
-| 🧪 **Testing Support**        | Unit, E2E, and coverage scripts                                |
+| 🧪 **Testing Support**        | Vitest unit suite plus a Supertest E2E suite against Postgres  |
 
 ---
 
@@ -157,64 +157,33 @@ The API uses `@nestjs/swagger` to automatically expose an interactive **OpenAPI 
 
 ```text
 src/
-│
-├── auth/
-│   ├── guards/
-│   ├── strategies/
-│   ├── auth.controller.ts
-│   ├── auth.service.ts
-│   └── ...
-│
-├── users/
+├── auth/                 # register/login, JwtStrategy, JWT module config
 │   ├── dto/
-│   ├── entities/
-│   ├── users.controller.ts
-│   ├── users.service.ts
-│   └── ...
-│
-├── books/
-│   ├── dto/
-│   ├── entities/
-│   ├── books.controller.ts
-│   ├── books.service.ts
-│   └── ...
-│
-├── author/
-│   ├── dto/
-│   ├── entities/
-│   ├── author.controller.ts
-│   ├── author.service.ts
-│   └── ...
-│
-├── tags/
-│   ├── dto/
-│   ├── entities/
-│   ├── tags.controller.ts
-│   ├── tags.service.ts
-│   └── ...
-│
-├── book-connections/
-│   ├── dto/
-│   ├── entities/
-│   ├── book-connections.controller.ts
-│   ├── book-connections.service.ts
-│   └── ...
-│
-├── graph/
-│   ├── dto/
-│   ├── graph.controller.ts
-│   ├── graph.service.ts
-│   └── ...
-│
+│   └── strategies/
+├── users/                # accounts (self or ADMIN), bcrypt hashing
+├── books/                # user-owned books, filters, book↔tag join entity
+├── author/               # shared author catalogue
+├── tags/                 # user-owned tags
+├── book-connections/     # directed, user-owned links between two books
+├── graph/                # { nodes, edges } aggregation for vis-network
 ├── common/
-│   ├── decorators/
-│   ├── guards/
-│   ├── pipes/
-│   └── validators/
-│
-└── config/
-    ├── database.config.ts
-    └── ...
+│   ├── decorators/       # @Roles()
+│   ├── guards/           # JwtAuthGuard, RolesGuard
+│   ├── types/            # AuthenticatedRequest, BookRole / UserRole enums
+│   ├── utils/            # requireUserId, duration parsing
+│   └── validators/       # @IsDifferentFrom()
+├── config/
+│   ├── data-source.ts    # TypeORM DataSource used by the migration CLI
+│   └── swagger.config.ts
+├── lib/
+│   ├── database/seeds/   # seed script
+│   └── schemas/          # Zod env schema, validated at bootstrap
+├── migrations/
+├── app.module.ts
+├── app.setup.ts          # global pipes and middleware, shared by main.ts and E2E
+└── main.ts
+test/
+└── app.e2e-spec.ts
 ```
 
 ---
@@ -223,21 +192,26 @@ src/
 
 ## 🔐 Authentication
 
-| Method | Endpoint         | Description                  | Auth |
-| :----: | ---------------- | ---------------------------- | :--: |
-| `POST` | `/auth/register` | Create a new account         |   ❌  |
-| `POST` | `/auth/login`    | Authenticate and receive JWT |   ❌  |
+| Method | Endpoint         | Description                                                 | Auth |
+| :----: | ---------------- | ----------------------------------------------------------- | :--: |
+| `POST` | `/auth/register` | Create a new account                                        |   ❌  |
+| `POST` | `/auth/login`    | Authenticate; sets the JWT in an HttpOnly `access_token` cookie |   ❌  |
+
+Both routes are limited to 5 requests per 6 seconds. Every other route shares a global limit of 10 requests per 6 seconds.
 
 ---
 
 ## 👤 Users
 
-|  Method  | Endpoint     | Description    | Auth |
-| :------: | ------------ | -------------- | :--: |
-|   `GET`  | `/users`     | Retrieve users |  🔐  |
-|  `POST`  | `/users`     | Create a user  |  🔐  |
-|  `PATCH` | `/users/:id` | Update a user  |  🔐  |
-| `DELETE` | `/users/:id` | Delete a user  |  🔐  |
+|  Method  | Endpoint     | Description     |       Auth       |
+| :------: | ------------ | --------------- | :--------------: |
+|   `GET`  | `/users`     | List all users  |     🔐 ADMIN     |
+|  `POST`  | `/users`     | Create a user   |     🔐 ADMIN     |
+|   `GET`  | `/users/:id` | Retrieve a user | 🔐 self / ADMIN  |
+|  `PATCH` | `/users/:id` | Update a user   | 🔐 self / ADMIN  |
+| `DELETE` | `/users/:id` | Delete a user   | 🔐 self / ADMIN  |
+
+Users sign themselves up through `/auth/register`. `POST /users` is for administrators only. A non-admin who addresses another user's `:id` gets `403 Forbidden`. Passwords can only be set at registration, never through these routes.
 
 ---
 
@@ -247,9 +221,11 @@ src/
 | :------: | -------------- | ------------------------ | :--: |
 |   `GET`  | `/books`       | Search and filter books  |  🔐  |
 |   `GET`  | `/books/:id`   | Retrieve a specific book |  🔐  |
-|  `POST`  | `/books/books` | Register a new book      |  🔐  |
+|  `POST`  | `/books`       | Register a new book      |  🔐  |
 |  `PATCH` | `/books/:id`   | Update a book            |  🔐  |
 | `DELETE` | `/books/:id`   | Delete a book            |  🔐  |
+
+Books belong to the user who created them. Every route sees only the caller's books, and another user's book id returns `404 Not Found`.
 
 ### 🔎 Book Filters
 
@@ -264,7 +240,7 @@ GET /books?status=read
 
 Supported filters:
 
-* 🔎 `search`
+* 🔎 `search` (case-insensitive match on book title or author name)
 * ✍️ `authorId`
 * 🏷️ `tagId`
 * 📚 `status`
@@ -283,10 +259,13 @@ wishlist
 
 |  Method  | Endpoint      | Description      | Auth |
 | :------: | ------------- | ---------------- | :--: |
-|   `GET`  | `/author`     | List authors     |  🔐  |
-|  `POST`  | `/author`     | Create an author |  🔐  |
-|  `PATCH` | `/author/:id` | Update an author |  🔐  |
-| `DELETE` | `/author/:id` | Delete an author |  🔐  |
+|   `GET`  | `/author`     | List authors       |  🔐  |
+|   `GET`  | `/author/:id` | Retrieve an author |  🔐  |
+|  `POST`  | `/author`     | Create an author   |  🔐  |
+|  `PATCH` | `/author/:id` | Update an author   |  🔐  |
+| `DELETE` | `/author/:id` | Delete an author   |  🔐  |
+
+Authors are a shared catalogue that no single user owns. An author who still has books cannot be deleted (`409 Conflict`).
 
 ---
 
@@ -294,10 +273,13 @@ wishlist
 
 |  Method  | Endpoint    | Description  | Auth |
 | :------: | ----------- | ------------ | :--: |
-|   `GET`  | `/tags`     | List tags    |  🔐  |
-|  `POST`  | `/tags`     | Create a tag |  🔐  |
-|  `PATCH` | `/tags/:id` | Update a tag |  🔐  |
-| `DELETE` | `/tags/:id` | Delete a tag |  🔐  |
+|   `GET`  | `/tags`     | List tags      |  🔐  |
+|   `GET`  | `/tags/:id` | Retrieve a tag |  🔐  |
+|  `POST`  | `/tags`     | Create a tag   |  🔐  |
+|  `PATCH` | `/tags/:id` | Update a tag   |  🔐  |
+| `DELETE` | `/tags/:id` | Delete a tag   |  🔐  |
+
+Tags belong to the user who created them. Tag names are unique per user, so two users can each have a tag with the same name.
 
 ---
 
@@ -311,24 +293,24 @@ A connection contains:
 {
   "sourceBookId": "source-uuid",
   "discoveredBookId": "target-uuid",
-  "label": "Similar themes"
+  "description": "Similar themes"
 }
 ```
 
 ### Endpoints
 
-|  Method  | Endpoint                | Description              |
-| :------: | ----------------------- | ------------------------ |
-|  `POST`  | `/book-connections`     | Create a book connection |
-| `DELETE` | `/book-connections/:id` | Delete a connection      |
+|  Method  | Endpoint                | Description              | Auth |
+| :------: | ----------------------- | ------------------------ | :--: |
+|  `POST`  | `/book-connections`     | Create a book connection |  🔐  |
+| `DELETE` | `/book-connections/:id` | Delete a connection      |  🔐  |
 
 ### Validation
 
 The connection engine prevents:
 
-* ❌ Self-referencing relationships
-* ❌ Duplicate connections
-* ❌ Connections involving books belonging to another user
+* ❌ Self-referencing relationships (`400 Bad Request`)
+* ❌ Duplicate connections, in either direction (`409 Conflict`)
+* ❌ Connections involving books belonging to another user (`404 Not Found`)
 
 Example:
 
@@ -352,10 +334,10 @@ Book A ───────────────► Book A
 
 # 🕸️ Graph API
 
-The `/graph` endpoint aggregates a user's books and book connections into a structure designed for graph visualization.
+The `/graph` endpoint aggregates the authenticated user's books and book connections into a structure designed for graph visualization.
 
 ```http
-GET /graph
+GET /graph  🔐
 ```
 
 The endpoint returns:
@@ -366,7 +348,7 @@ The endpoint returns:
     {
       "id": "uuid",
       "label": "Book Title",
-      "group": "READ"
+      "group": "read"
     }
   ],
   "edges": [
@@ -405,6 +387,8 @@ The endpoint returns:
                     └──────────────┘
 ```
 
+Nodes are grouped by book status (`read`, `reading`, `wishlist`). An edge's `label` is the connection's `description`, and is left out when the connection has none.
+
 The resulting structure can be consumed directly by frontend visualization libraries such as **vis-network**.
 
 ---
@@ -415,15 +399,17 @@ Security is handled at both the authentication and resource-ownership levels.
 
 ### Authentication
 
-Protected endpoints require a valid JWT:
+Protected endpoints require a valid JWT. `POST /auth/login` sets it in an HttpOnly `access_token` cookie, marked `Secure` when `NODE_ENV=production`, which browsers send automatically. API clients can send the same token in a header instead:
 
 ```http
 Authorization: Bearer <JWT>
 ```
 
+`JWT_EXPIRATION` sets the token lifetime, and the cookie expires at the same time.
+
 ### Authorization
 
-Resource ownership checks ensure that users cannot manipulate books or relationships belonging to another account.
+Ownership checks stop users from reading or changing books, tags, connections, or accounts that belong to someone else. Each service enforces ownership by filtering on the caller's user id; no global guard does it. Role checks (`ADMIN` / `USER`) apply only to the admin routes under `/users`.
 
 The Book Connections module specifically validates ownership of both:
 
@@ -445,7 +431,7 @@ class-validator
 class-transformer
 ```
 
-Custom validation rules are also used where domain-specific constraints are required.
+The global `ValidationPipe` runs with `whitelist` and `forbidNonWhitelisted`, so a request carrying any field its DTO does not declare is rejected with `400 Bad Request`. Custom validators such as `@IsDifferentFrom()` cover domain-specific rules.
 
 ---
 
@@ -487,7 +473,7 @@ This can be used with API clients, documentation generators, or client-code gene
 
 Make sure the following are installed:
 
-* 🟢 **Node.js 18+**
+* 🟢 **Node.js 20+**
 * 📦 **npm** or **Yarn**
 * 🐘 **PostgreSQL**
 
@@ -513,26 +499,52 @@ npm install
 
 ## 3. Configure Environment Variables
 
-Create a `.env` file in the project root:
+Copy `.env.example` to `.env` in the project root and fill it in:
 
 ```env
+NODE_ENV=development
 PORT=3000
-
-DATABASE_HOST=localhost
-DATABASE_PORT=5432
-DATABASE_USER=postgres
-DATABASE_PASSWORD=postgres
-DATABASE_NAME=bookgraph_db
-
-JWT_SECRET=your_super_secret_jwt_key
+JWT_SECRET=replace-with-a-long-random-secret
 JWT_EXPIRATION=1d
+DB_HOST=localhost
+DB_PORT=5432
+DB_USERNAME=<your-postgres-user>
+DB_PASSWORD=<your-postgres-password>
+DB_NAME=bookgraph
 ```
+
+A Zod schema (`src/lib/schemas/env.schema.ts`) validates these at startup, and the app refuses to boot if any value is invalid:
+
+| Variable         | Required | Default       | Notes                                                                 |
+| ---------------- | :------: | ------------- | --------------------------------------------------------------------- |
+| `NODE_ENV`       |          | `development` | `development`, `production` or `test`. SQL logging is on only in `development` |
+| `PORT`           |          | `3000`        |                                                                       |
+| `JWT_SECRET`     |    ✅    |               | At least 32 characters                                                |
+| `JWT_EXPIRATION` |          | `1d`          | A duration such as `60s`, `15m`, `2h` or `1d`                         |
+| `DB_HOST`        |          | `localhost`   |                                                                       |
+| `DB_PORT`        |          | `5432`        |                                                                       |
+| `DB_USERNAME`    |    ✅    |               |                                                                       |
+| `DB_PASSWORD`    |    ✅    |               |                                                                       |
+| `DB_NAME`        |    ✅    |               |                                                                       |
 
 > ⚠️ Never commit real credentials, JWT secrets, or production environment variables to version control.
 
 ---
 
-## 4. Start the Development Server
+## 4. Set Up the Database
+
+Create the database named in `DB_NAME`, then apply the migrations. TypeORM `synchronize` is off, so migrations are the only way the schema changes.
+
+```bash
+npm run migration:run   # builds, then applies pending migrations
+npm run seed            # optional: builds, then loads sample data
+```
+
+To change the schema, edit the entities and run `npm run migration:generate` to generate a migration from the diff.
+
+---
+
+## 5. Start the Development Server
 
 ```bash
 npm run start:dev
@@ -554,7 +566,7 @@ http://localhost:3000/api
 
 # 🧪 Testing
 
-The project includes scripts for unit testing, E2E testing, and test coverage.
+Tests run on **Vitest** (not Jest), with `@nestjs/testing` for module setup.
 
 ### Unit Tests
 
@@ -562,11 +574,17 @@ The project includes scripts for unit testing, E2E testing, and test coverage.
 npm run test
 ```
 
+Unit tests mock every repository and need no database.
+
 ### End-to-End Tests
 
 ```bash
 npm run test:e2e
 ```
+
+The E2E suite (`test/app.e2e-spec.ts`) boots the full `AppModule` and uses Supertest to walk the main journey: register, log in, create an author and two books, connect them, and read the graph. It also checks that a second user cannot see or touch the first user's data.
+
+It needs the PostgreSQL database from your `.env`, with migrations applied. Every row it creates is tied to a username unique to that run and is deleted when the suite finishes.
 
 ### Test Coverage
 
@@ -625,9 +643,9 @@ A typical development workflow looks like:
 * [x] 🔗 Book connections
 * [x] 🕸️ Graph aggregation
 * [x] 📖 OpenAPI / Swagger documentation
-* [ ] 🧪 Expand unit test coverage
-* [ ] 🧪 Expand integration tests
-* [ ] 🧪 Expand E2E test coverage
+* [x] 🧪 Unit tests for every module
+* [x] 🧪 E2E smoke test of the main user journey
+* [ ] 🧪 Dedicated test database for the E2E suite
 
 ### Frontend
 

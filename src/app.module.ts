@@ -52,9 +52,9 @@ import { GraphModule } from './graph/graph.module.js';
         database: configService.getOrThrow<string>('DB_NAME'),
         entities: [User, Author, Tag, BookTag, BookConnection, Book],
         synchronize: false, // schema changes go through migrations
-        // SQL logging is useful in development and noisy (and a disclosure risk)
-        // in production.
-        logging: configService.get<string>('NODE_ENV') !== 'production',
+        // SQL logging is useful in development, noisy in test runs (vitest sets
+        // NODE_ENV=test) and a disclosure risk in production.
+        logging: configService.get<string>('NODE_ENV') === 'development',
       })
 
     }),
