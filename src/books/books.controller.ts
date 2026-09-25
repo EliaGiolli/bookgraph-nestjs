@@ -10,14 +10,19 @@ import {
   UseGuards,
   Body,
   Req,
+  HttpCode,
+  HttpStatus,
+  BadRequestException,
   UnauthorizedException
 } from '@nestjs/common';
 // Swagger OpenAPI
 import { 
   ApiTags, 
   ApiOperation, 
-  ApiQuery, 
-  ApiResponse 
+  ApiResponse,
+  ApiBearerAuth,
+  ApiBadRequestResponse,
+  ApiNotFoundResponse
 } from '@nestjs/swagger';
 //Services, Entities and so on
 import { BooksService } from './books.service.js';
@@ -30,66 +35,88 @@ import { GetBooksFilterDto } from './dto/get-book-filter.dto.js';
 import {JwtAuthGuard} from '../common/guards/jwt-auth.guard.js';
 import { UpdateBookDto } from './dto/update-book.dto.js';
 import { DeleteBookDto } from './dto/delete-book.dto.js';
+import type { AuthenticatedRequest } from '../common/types/authenticated-request.js';
 
 @ApiTags('Books')
+@ApiBearerAuth()
+// A book belongs to exactly one user, so every route here needs an identity —
+// including the reads, which are scoped to the caller's own library.
+@UseGuards(JwtAuthGuard)
 @Controller('books')
 export class BooksController {
   constructor(private readonly booksService: BooksService) {}
 
+  private userIdOf(request: AuthenticatedRequest): string {
+    const userId = request.user?.id;
+
+    if (!userId) {
+      throw new UnauthorizedException('User not authenticated');
+    }
+
+    return userId;
+  }
+
   @Get()
-  @ApiOperation({ summary: 'Retrieve public list of books with optional search filters' })
+  @ApiOperation({ summary: "Search and filter the caller's own books" })
   @ApiResponse({ status: 200, description: 'List of books retrieved successfully.' })
-  findAll(@Query() filterDto: GetBooksFilterDto): Promise<Book[]> {
-    return this.booksService.findAll(filterDto);
+  findAll(
+    @Query() filterDto: GetBooksFilterDto,
+    @Req() request: AuthenticatedRequest,
+  ): Promise<Book[]> {
+    return this.booksService.findAll(filterDto, this.userIdOf(request));
   }
 
   @Get(':id')
-  @ApiOperation({ summary: 'Get a specific book by ID' })
+  @ApiOperation({ summary: 'Get one of the caller\'s books by ID' })
   @ApiResponse({ status: 200, description: 'Book details retrieved successfully.' })
-  @ApiResponse({ status: 404, description: 'Book not found.' })
-  findOne(@Param('id', ParseUUIDPipe) id: string): Promise<Book> {
-    return this.booksService.findOne(id);
+  @ApiNotFoundResponse({ description: 'Book not found or does not belong to you.' })
+  findOne(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Req() request: AuthenticatedRequest,
+  ): Promise<Book> {
+    return this.booksService.findOne(id, this.userIdOf(request));
   }
 
-  @UseGuards(JwtAuthGuard)
-  @Post('books')
-  createBook(@Body() createBookDto: CreateBookDto, id: string) {
-    return this.booksService.create(createBookDto, id)
+  @Post()
+  @ApiOperation({ summary: 'Register a new book' })
+  @ApiResponse({ status: 201, description: 'Book successfully created.' })
+  @ApiBadRequestResponse({ description: 'Invalid input payload.' })
+  createBook(
+    @Body() createBookDto: CreateBookDto,
+    @Req() request: AuthenticatedRequest,
+  ) {
+    return this.booksService.create(createBookDto, this.userIdOf(request));
   }
 
-  @UseGuards(JwtAuthGuard)
   @Patch(':id')
+  @ApiOperation({ summary: 'Update a book' })
+  @ApiResponse({ status: 200, description: 'Book successfully updated.' })
+  @ApiNotFoundResponse({ description: 'Book not found or does not belong to you.' })
   updateBook(
     @Body() updateBookDto: UpdateBookDto,
     @Param('id', ParseUUIDPipe) id: string,
-    @Req() request: Request & { user?: { id: string } },
+    @Req() request: AuthenticatedRequest,
   ) {
-    const userId = request.user?.id;
-
-    if (!userId) {
-      throw new UnauthorizedException('User not authenticated');
-    }
-
-    return this.booksService.update(id, updateBookDto, userId);
+    return this.booksService.update(id, updateBookDto, this.userIdOf(request));
   }
 
-  @UseGuards(JwtAuthGuard)
   @Delete(':id')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiOperation({ summary: 'Delete a book' })
+  @ApiResponse({ status: 204, description: 'Book successfully deleted.' })
+  @ApiBadRequestResponse({ description: 'Route id and body id do not match.' })
+  @ApiNotFoundResponse({ description: 'Book not found or does not belong to you.' })
   deleteBook(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() deleteBookDto: DeleteBookDto,
-    @Req() request: Request & { user?: { id: string } },
+    @Req() request: AuthenticatedRequest,
   ) {
-    const userId = request.user?.id;
-
-    if (!userId) {
-      throw new UnauthorizedException('User not authenticated');
-    }
+    const userId = this.userIdOf(request);
 
     if (deleteBookDto.id && deleteBookDto.id !== id) {
-      throw new Error('Route id and body id do not match');
+      throw new BadRequestException('Route id and body id do not match');
     }
 
-    return this.booksService.remove(id);
+    return this.booksService.remove(id, userId);
   }
 }
