@@ -12,8 +12,7 @@ import {
   Req,
   HttpCode,
   HttpStatus,
-  BadRequestException,
-  UnauthorizedException
+  BadRequestException
 } from '@nestjs/common';
 // Swagger OpenAPI
 import { 
@@ -36,6 +35,7 @@ import {JwtAuthGuard} from '../common/guards/jwt-auth.guard.js';
 import { UpdateBookDto } from './dto/update-book.dto.js';
 import { DeleteBookDto } from './dto/delete-book.dto.js';
 import type { AuthenticatedRequest } from '../common/types/authenticated-request.js';
+import { requireUserId } from '../common/utils/require-user-id.util.js';
 
 @ApiTags('Books')
 @ApiBearerAuth()
@@ -46,16 +46,6 @@ import type { AuthenticatedRequest } from '../common/types/authenticated-request
 export class BooksController {
   constructor(private readonly booksService: BooksService) {}
 
-  private userIdOf(request: AuthenticatedRequest): string {
-    const userId = request.user?.id;
-
-    if (!userId) {
-      throw new UnauthorizedException('User not authenticated');
-    }
-
-    return userId;
-  }
-
   @Get()
   @ApiOperation({ summary: "Search and filter the caller's own books" })
   @ApiResponse({ status: 200, description: 'List of books retrieved successfully.' })
@@ -63,7 +53,7 @@ export class BooksController {
     @Query() filterDto: GetBooksFilterDto,
     @Req() request: AuthenticatedRequest,
   ): Promise<Book[]> {
-    return this.booksService.findAll(filterDto, this.userIdOf(request));
+    return this.booksService.findAll(filterDto, requireUserId(request));
   }
 
   @Get(':id')
@@ -74,7 +64,7 @@ export class BooksController {
     @Param('id', ParseUUIDPipe) id: string,
     @Req() request: AuthenticatedRequest,
   ): Promise<Book> {
-    return this.booksService.findOne(id, this.userIdOf(request));
+    return this.booksService.findOne(id, requireUserId(request));
   }
 
   @Post()
@@ -85,7 +75,7 @@ export class BooksController {
     @Body() createBookDto: CreateBookDto,
     @Req() request: AuthenticatedRequest,
   ) {
-    return this.booksService.create(createBookDto, this.userIdOf(request));
+    return this.booksService.create(createBookDto, requireUserId(request));
   }
 
   @Patch(':id')
@@ -97,7 +87,7 @@ export class BooksController {
     @Param('id', ParseUUIDPipe) id: string,
     @Req() request: AuthenticatedRequest,
   ) {
-    return this.booksService.update(id, updateBookDto, this.userIdOf(request));
+    return this.booksService.update(id, updateBookDto, requireUserId(request));
   }
 
   @Delete(':id')
@@ -111,7 +101,7 @@ export class BooksController {
     @Body() deleteBookDto: DeleteBookDto,
     @Req() request: AuthenticatedRequest,
   ) {
-    const userId = this.userIdOf(request);
+    const userId = requireUserId(request);
 
     if (deleteBookDto.id && deleteBookDto.id !== id) {
       throw new BadRequestException('Route id and body id do not match');

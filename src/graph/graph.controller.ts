@@ -8,6 +8,8 @@ import {
 import { GraphService } from './graph.service.js';
 import { GraphResponseDto } from './dto/graph-response.dto.js';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard.js';
+import { requireUserId } from '../common/utils/require-user-id.util.js';
+import type { AuthenticatedRequest } from '../common/types/authenticated-request.js';
 
 @ApiTags('Graph')
 @ApiBearerAuth()
@@ -23,7 +25,7 @@ export class GraphController {
     description: 'Graph nodes and edges successfully retrieved.',
     type: GraphResponseDto,
   })
-  async getGraph(@Req() req: any): Promise<GraphResponseDto> {
-    return this.graphService.getUserGraph(req.user.id);
+  async getGraph(@Req() req: AuthenticatedRequest): Promise<GraphResponseDto> {
+    return this.graphService.getUserGraph(requireUserId(req));
   }
 }
